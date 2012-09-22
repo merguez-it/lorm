@@ -13,9 +13,9 @@ class Person : public table<Person> {
     column<std::string> desc;
     column<double> age;
 
-//    group<Person> friends; 
+//    collection<Person> friends; 
 //    column<Address> address;
-//    group<Parent> parents;
+//    collection<Parent> parents;
 };
 
 #endif // __PERSON_H
