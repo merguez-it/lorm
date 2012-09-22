@@ -9,7 +9,7 @@ template <class T> class column {
     column<T>(T* v): value(v), min_(NULL), max_(NULL), like_(NULL) {};
     column<T>(): value(NULL), min_(NULL), max_(NULL), like_(NULL) {};
 
-    bool is_null() {
+    bool is_null() const {
       return NULL == value;
     }
 

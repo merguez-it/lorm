@@ -1,8 +1,6 @@
 #include "person.h"
 
-REGISTER_TABLE(Person, id, num, name, desc, age)
-
-REGISTER_FIELDS(Person) {
+REGISTER_TABLE(Person, id, num, name, desc, age) {
   identity("id", &Person::id); // ID
   field("num", &Person::num, 123, false); // NOT_NULL
   field("name", &Person::name, false);
@@ -18,6 +16,7 @@ REGISTER_FIELDS(Person) {
 int main() {
 //  Lorm::connect("sqlite://:memory:");
   Lorm::connect("sqlite://person.db");
+  Person::register_table(); //On pourrait le cacher dans une macro... 
   Person::create();
 
   // -- 

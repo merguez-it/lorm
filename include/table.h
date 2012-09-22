@@ -189,7 +189,7 @@
   }
 
 #define FIELD_FUN(PREFIX, CPPTYPE, LORMTYPE) \
-   void field(const std::string & col, column<CPPTYPE> T::* f, CPPTYPE def, bool nullable = true) { \
+   static void field(const std::string & col, column<CPPTYPE> T::* f, CPPTYPE def, bool nullable = true) { \
      PREFIX ## _fields[col] = f; \
      \
      lorm::column_t c; \
@@ -201,7 +201,7 @@
      c.default_value = def; \
      columns_.push_back(c); \
    } \
-   void field(const std::string & col, column<CPPTYPE> T::* f, bool nullable = true) { \
+   static void field(const std::string & col, column<CPPTYPE> T::* f, bool nullable = true) { \
      PREFIX ## _fields[col] = f; \
      \
      lorm::column_t c; \
@@ -214,7 +214,7 @@
    } 
 
 #define ID_FUN(PREFIX, TYPE) \
-   void identity(const std::string & col, column<TYPE> T::* f) { \
+   static void identity(const std::string & col, column<TYPE> T::* f) { \
      identity_col_ = col; \
      PREFIX ## _fields[col] = f; \
      \
@@ -232,7 +232,6 @@
 
 template <class T, int V = 1> class table {
   public: 
-    virtual void register_table() = 0;
 
     ID_FUN(integer, int)
     FIELD_FUN(integer, int, lorm::SQL_INTEGER)
@@ -432,22 +431,17 @@ template <class T, int V = 1> class table {
     }
 
   private:
-    std::string identity_col_;
-    std::vector<lorm::column_t> columns_;
-
-    FIELD_DATA(integer, int)
-    FIELD_DATA(str, std::string)
-    FIELD_DATA(numeric, double)
+    static std::string identity_col_;
+    static std::vector<lorm::column_t> columns_;
+    static FIELD_DATA(integer, int)
+    static FIELD_DATA(str, std::string)
+    static FIELD_DATA(numeric, double)
 };
-
-#undef COLUMNS_AND_VALUES_FOR_INSERT
-#undef FIELD_FUN
-#undef FIELD_DATA
 
 #define TABLE_INIT(K) \
   K(); \
-  void operator=(K t); \
-  void register_table(); \
+  static void register_table();\
+  void operator=(const K& o); \
   K save(); \
   group<K> find(); \
   int count(); \
@@ -456,8 +450,17 @@ template <class T, int V = 1> class table {
   std::string to_string(); \
   static std::string classname() { return pluralize(lower(#K)); }
 
-#define REGISTER_FIELDS(K) \
-  K::K() { register_table(); } \
+
+#define REGISTER_TABLE(K, ...) \
+  template <class K, int V> std::vector<lorm::column_t> table<K,V>::columns_;\
+  template <class K, int V> std::map<std::string, column<int> K::*> table<K,V>::integer_fields;\
+  template <class K, int V> std::map<std::string, column<double> K::*> table<K,V>::numeric_fields;\
+  template <class K, int V> std::map<std::string, column<std::string> K::*> table<K,V>::str_fields;\
+  template <class K, int V> std::string table<K,V>::identity_col_;\
+  void K::operator=(const K& o) { \
+    FOR_EACH(DO_REGISTER_, o, __VA_ARGS__) \
+  }\
+  K::K() { } \
   K K::save() { return save_(this); } \
   group<K> K::find() { return find_(this); } \
   int K::count() { return count_(this); } \
@@ -466,11 +469,9 @@ template <class T, int V = 1> class table {
   std::string K::to_string() { return to_string_(this); } \
   void K::register_table() 
 
-#define REGISTER_TABLE(KLASS, ...) \
-  void KLASS::operator=(KLASS o) { \
-    FOR_EACH(DO_REGISTER_, o, __VA_ARGS__) \
-  }
-
+#undef COLUMNS_AND_VALUES_FOR_INSERT
+#undef FIELD_FUN
+#undef FIELD_DATA
 
 #endif // __LORM_TABLE_H
 
