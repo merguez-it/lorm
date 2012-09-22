@@ -7,6 +7,7 @@ include_directories(
   )
 
 set(LORM_SOURCES
+  datetime.cc
   util.cc
   db.cc
   )

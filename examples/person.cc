@@ -56,9 +56,9 @@ int main() {
   someone.id < 10;
   someone.id > 0;
 
-  group<Person> peoples = someone.find();
+  collection<Person> peoples = someone.find();
   std::cout << "Found " << peoples.size() << " " << someone.name << "(s) : " << std::endl;
-  group<Person>::iterator it;
+  collection<Person>::iterator it;
   for(it = peoples.begin(); it != peoples.end(); it++) {
     std::cout << "DELETE " << (*it).name << " #" << (*it).id << std::endl;
   }

@@ -2,7 +2,7 @@
 #define __LORM_TABLE_H
 
 #include "column.h"
-#include "group.h"
+#include "collection.h"
 #include "db.h"
 #include "util.h"
 #include "types.h"
@@ -291,11 +291,11 @@ template <class T, int V = 1> class table {
       return T::search_by_id(id);
     }
 
-    group<T> find_(T* const t) {
+    collection<T> find_(T* const t) {
       return find_(*t);
     }
-    group<T> find_(T t) {
-      group<T> result;
+    collection<T> find_(T t) {
+      collection<T> result;
 
       std::stringstream query;
       query << "SELECT * FROM " << T::classname();
@@ -389,8 +389,8 @@ template <class T, int V = 1> class table {
       return query.str();
     }
 
-    group<T> get_selection(std::vector<std::map<std::string, std::string> > data, T t) {
-      group<T> result_list;
+    collection<T> get_selection(std::vector<std::map<std::string, std::string> > data, T t) {
+      collection<T> result_list;
 
       std::vector<std::map<std::string, std::string> >::iterator itd;
       for(itd = data.begin(); itd != data.end(); itd++) {
@@ -443,7 +443,7 @@ template <class T, int V = 1> class table {
   static void register_table();\
   void operator=(const K& o); \
   K save(); \
-  group<K> find(); \
+  collection<K> find(); \
   int count(); \
   K update(K u); \
   void remove(); \
@@ -462,7 +462,7 @@ template <class T, int V = 1> class table {
   }\
   K::K() { } \
   K K::save() { return save_(this); } \
-  group<K> K::find() { return find_(this); } \
+  collection<K> K::find() { return find_(this); } \
   int K::count() { return count_(this); } \
   K K::update(K u) { return update_(this, u); } \
   void K::remove() { remove_(this); } \
