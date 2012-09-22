@@ -16,7 +16,6 @@ REGISTER_TABLE(Person, id, num, name, desc, age) {
 int main() {
 //  Lorm::connect("sqlite://:memory:");
   Lorm::connect("sqlite://person.db");
-  Person::register_table(); //On pourrait le cacher dans une macro... 
   Person::create();
 
   // -- 

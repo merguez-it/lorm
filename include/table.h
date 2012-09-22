@@ -429,10 +429,10 @@ template <class T, int V = 1> class table {
 
       return result_list;
     }
-
-  private:
+  protected:
     static std::string identity_col_;
     static std::vector<lorm::column_t> columns_;
+  private:
     static FIELD_DATA(integer, int)
     static FIELD_DATA(str, std::string)
     static FIELD_DATA(numeric, double)
@@ -460,7 +460,7 @@ template <class T, int V = 1> class table {
   void K::operator=(const K& o) { \
     FOR_EACH(DO_REGISTER_, o, __VA_ARGS__) \
   }\
-  K::K() { } \
+  K::K() {if (columns_.empty() ) K::register_table(); } \
   K K::save() { return save_(this); } \
   collection<K> K::find() { return find_(this); } \
   int K::count() { return count_(this); } \
