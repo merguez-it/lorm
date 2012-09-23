@@ -45,6 +45,7 @@ int main() {
   // --
   Person jupd;
   jupd.num = 456;
+  jupd.name="johnup";
   john = john.update(jupd);
   std::cout << "Update john -> " << john.to_string() << std::endl;
 

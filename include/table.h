@@ -176,18 +176,6 @@
     } \
   }
 
-#define COLUMNS_AND_VALUES(OBJECT, TYPE, SQLTYPE, STRINGSEP, SEPARATOR) \
-  for(it = OBJECT.columns_.begin(); it != OBJECT.columns_.end(); it++) { \
-    if(SQLTYPE == (*it).type) { \
-      column<TYPE> T::* f = offset_to_columnref<TYPE>((*it).offset); \
-      std::string condition = (OBJECT.*f).where((*it).name, STRINGSEP); \
-      if(!condition.empty()) { \
-        query << sep << condition; \
-        sep = SEPARATOR; \
-      } \
-    } \
-  }
-
 #define FIELD_FUN(CPPTYPE, LORMTYPE) \
    static void field(const std::string & col, column<CPPTYPE> T::* f, CPPTYPE def, bool nullable = true) { \
      lorm::column_t c; \
@@ -215,7 +203,7 @@
    static void identity(const std::string & col, column<TYPE> T::* f) { \
      identity_col_ = col; \
      lorm::column_t c; \
-     c.offset=*(reinterpret_cast<unsigned long *> (&f));\
+     c.offset= *(reinterpret_cast<unsigned long *> (&f));\
      c.is_id = true; \
      c.type = lorm::SQL_INTEGER; \
      c.name = col; \
@@ -265,6 +253,26 @@ template <class T, int V = 1> class table {
       column<CPPTYPE> T::* g;
       memcpy(&g, &offset, sizeof(unsigned long));
       return g;
+    }
+  
+    abstract_column& offset_to_column(unsigned long offset) {
+      abstract_column *col;
+      col=reinterpret_cast<abstract_column *>(this+offset); // Arrière, Satan !!
+      return *col;
+    }
+    
+    std::string column_and_values(std::string next_keyword, const std::string &separator) {
+      std::string result;
+      std::vector<lorm::column_t>::iterator it;
+      for(it = columns_.begin(); it != columns_.end(); it++) {
+        abstract_column& col=offset_to_column((*it).offset);
+        std::string condition = col.where((*it).name, "dummy");
+        if(!condition.empty()) {
+          result += next_keyword + condition;
+          next_keyword = separator;
+        }
+      }
+      return result;
     }
   
     T save_(T* const t) {
@@ -352,24 +360,15 @@ template <class T, int V = 1> class table {
     T update_(T* const t, T u) {
       return update_(*t, u);
     }
-    T update_(T t, T u) {
+    T update_(T t, T u) { //TODO: virer t pour utiliser plutôt "this", non ?
       std::stringstream query;
+      std::string keyword = " SET ";
       query << "UPDATE " << T::classname();
-
-      std::vector<lorm::column_t>::iterator it;
-
-      std::string sep = " SET ";
-      COLUMNS_AND_VALUES(u, int, lorm::SQL_INTEGER, "", ", ")
-      COLUMNS_AND_VALUES(u, std::string, lorm::SQL_STRING, "'", ", ")
-      COLUMNS_AND_VALUES(u, double, lorm::SQL_NUMERIC, "", ", ")
-
-      sep = " WHERE ";
-      COLUMNS_AND_VALUES(t, int, lorm::SQL_INTEGER, "", " AND ")
-      COLUMNS_AND_VALUES(t, std::string, lorm::SQL_STRING, "'", " AND ")
-      COLUMNS_AND_VALUES(t, double, lorm::SQL_NUMERIC, "", " AND ")
-
+      query << u.column_and_values(keyword,", ");
+      keyword= " WHERE ";
+      query << t.column_and_values(keyword," AND ");
+      std::cout << query.str() << std::endl;
       Lorm::getInstance()->execute(query.str());
-
       T result = t;
       result = u;
       return result;
@@ -378,17 +377,9 @@ template <class T, int V = 1> class table {
     std::string to_string_(T* const t) {
       return to_string_(*t);
     }
+  
     std::string to_string_(T t) {
-      std::stringstream query;
-
-      std::vector<lorm::column_t>::iterator it;
-
-      std::string sep = "\t";
-      COLUMNS_AND_VALUES(t, int, lorm::SQL_INTEGER, "", "\n\t")
-      COLUMNS_AND_VALUES(t, std::string, lorm::SQL_STRING, "'", "\n\t")
-      COLUMNS_AND_VALUES(t, double, lorm::SQL_NUMERIC, "", "\n\t")
-
-      return query.str();
+      return t.column_and_values("\t", "\n\t");
     }
   
     collection<T> get_selection(std::vector<std::map<std::string, std::string> > data, T t) {
