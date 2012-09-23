@@ -12,6 +12,7 @@ namespace lorm {
     SQL_STRING,
     SQL_INTEGER,
     SQL_NUMERIC
+    //SQL_DATETIME
   };
 
   struct column_t {
@@ -21,6 +22,7 @@ namespace lorm {
     bool nullable;
     bool has_default;
     any default_value;
+    unsigned long offset; // Binary offset to the member in the class
   };
 
   class dbi {

@@ -12,6 +12,7 @@ class Person : public table<Person> {
     column<std::string> name;
     column<std::string> desc;
     column<double> age;
+//  column<datetime> birthday;
 
 //    collection<Person> friends; 
 //    column<Address> address;

@@ -14,6 +14,8 @@ namespace lorm {
     types_[SQL_STRING] = "TEXT";
     types_[SQL_INTEGER] = "INTEGER";
     types_[SQL_NUMERIC] = "REAL";
+//    types_[SQL_DATETIME] = "DATE";
+
   }
 
   void sqlite::close() {
@@ -50,6 +52,9 @@ namespace lorm {
           case SQL_STRING:
             query << "'" << any_cast<std::string>((*it).default_value) << "'";
             break;
+//          case SQL_DATETIME:
+//            query << "'" << any_cast<std::string>((*it).default_value) << "'";
+//            break;
           case SQL_INTEGER:
             query << any_cast<int>((*it).default_value);
             break;

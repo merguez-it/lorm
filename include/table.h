@@ -6,7 +6,7 @@
 #include "db.h"
 #include "util.h"
 #include "types.h"
-
+#include "datetime.h"
 #include <string>
 #include <vector>
 #include <map>
@@ -152,10 +152,10 @@
     x = o.x; \
   }
 
-#define COLUMNS_AND_VALUES_FOR_INSERT(PREFIX, TYPE, SQLTYPE, SEPARATOR) \
-  for(it = t.columns_.begin(); it != t.columns_.end(); it++) { \
+#define COLUMNS_AND_VALUES_FOR_INSERT(TYPE, SQLTYPE, SEPARATOR) \
+  for(it = columns_.begin(); it != columns_.end(); it++) { \
     if(SQLTYPE == (*it).type) {\
-      column<TYPE> T::* f = t.PREFIX ## _fields[(*it).name]; \
+      column<TYPE> T::* f = offset_to_columnref<TYPE>((*it).offset); \
       if(NULL != (t.*f).value) { \
         cols << sep << (*it).name; \
         values << sep << SEPARATOR << (t.*f) << SEPARATOR; \
@@ -164,10 +164,10 @@
     } \
   }
 
-#define COLUMNS_AND_VALUES_FOR_SELECT(PREFIX, TYPE, SQLTYPE, SEPARATOR) \
-  for(it = t.columns_.begin(); it != t.columns_.end(); it++) { \
+#define COLUMNS_AND_VALUES_FOR_SELECT(TYPE, SQLTYPE, SEPARATOR) \
+  for(it = columns_.begin(); it != columns_.end(); it++) { \
     if(SQLTYPE == (*it).type) { \
-      column<TYPE> T::* f = t.PREFIX ## _fields[(*it).name]; \
+      column<TYPE> T::* f = offset_to_columnref<TYPE>((*it).offset); \
       std::string condition = (t.*f).where((*it).name, SEPARATOR); \
       if(!condition.empty()) { \
         query << sep << condition; \
@@ -176,10 +176,10 @@
     } \
   }
 
-#define COLUMNS_AND_VALUES(OBJECT, PREFIX, TYPE, SQLTYPE, STRINGSEP, SEPARATOR) \
+#define COLUMNS_AND_VALUES(OBJECT, TYPE, SQLTYPE, STRINGSEP, SEPARATOR) \
   for(it = OBJECT.columns_.begin(); it != OBJECT.columns_.end(); it++) { \
     if(SQLTYPE == (*it).type) { \
-      column<TYPE> T::* f = OBJECT.PREFIX ## _fields[(*it).name]; \
+      column<TYPE> T::* f = offset_to_columnref<TYPE>((*it).offset); \
       std::string condition = (OBJECT.*f).where((*it).name, STRINGSEP); \
       if(!condition.empty()) { \
         query << sep << condition; \
@@ -188,11 +188,10 @@
     } \
   }
 
-#define FIELD_FUN(PREFIX, CPPTYPE, LORMTYPE) \
+#define FIELD_FUN(CPPTYPE, LORMTYPE) \
    static void field(const std::string & col, column<CPPTYPE> T::* f, CPPTYPE def, bool nullable = true) { \
-     PREFIX ## _fields[col] = f; \
-     \
      lorm::column_t c; \
+     c.offset=*(reinterpret_cast<unsigned long *> (&f));\
      c.is_id = false; \
      c.type = LORMTYPE; \
      c.name = col; \
@@ -202,9 +201,8 @@
      columns_.push_back(c); \
    } \
    static void field(const std::string & col, column<CPPTYPE> T::* f, bool nullable = true) { \
-     PREFIX ## _fields[col] = f; \
-     \
      lorm::column_t c; \
+     c.offset=*(reinterpret_cast<unsigned long *> (&f));\
      c.is_id = false; \
      c.type = LORMTYPE; \
      c.name = col; \
@@ -213,12 +211,11 @@
      columns_.push_back(c); \
    } 
 
-#define ID_FUN(PREFIX, TYPE) \
+#define ID_FUN(TYPE) \
    static void identity(const std::string & col, column<TYPE> T::* f) { \
      identity_col_ = col; \
-     PREFIX ## _fields[col] = f; \
-     \
      lorm::column_t c; \
+     c.offset=*(reinterpret_cast<unsigned long *> (&f));\
      c.is_id = true; \
      c.type = lorm::SQL_INTEGER; \
      c.name = col; \
@@ -227,17 +224,15 @@
      columns_.push_back(c); \
    } 
 
-#define FIELD_DATA(PREFIX, TYPE) \
-   std::map<std::string, column<TYPE> T::*> PREFIX ## _fields; 
-
 template <class T, int V = 1> class table {
   public: 
 
-    ID_FUN(integer, int)
-    FIELD_FUN(integer, int, lorm::SQL_INTEGER)
-    FIELD_FUN(str, std::string, lorm::SQL_STRING)
-    FIELD_FUN(numeric, double, lorm::SQL_NUMERIC)
-
+    ID_FUN(int)
+    FIELD_FUN(int, lorm::SQL_INTEGER)
+    FIELD_FUN(std::string, lorm::SQL_STRING)
+    FIELD_FUN(double, lorm::SQL_NUMERIC)
+//    FIELD_FUN(datetime,lorm::SQL_DATETIME)
+    
     static void create() {
       T table;
       Lorm::getInstance()->create_table(T::classname(), table.columns_);
@@ -251,7 +246,7 @@ template <class T, int V = 1> class table {
 
       std::stringstream query;
       query << "SELECT * FROM " << T::classname();
-      query << " WHERE " << result.identity_col_ << " = " << id << ";"; 
+      query << " WHERE " << T::identity_col_ << " = " << id << ";"; 
         
       std::vector<std::map<std::string, std::string> > data = Lorm::getInstance()->select(query.str());
       if(data.size() > 1) {
@@ -265,6 +260,13 @@ template <class T, int V = 1> class table {
     }
 
   protected:
+  
+    template <typename CPPTYPE> column<CPPTYPE> T::* offset_to_columnref(unsigned long offset) {
+      column<CPPTYPE> T::* g;
+      memcpy(&g, &offset, sizeof(unsigned long));
+      return g;
+    }
+  
     T save_(T* const t) {
       return save_(*t);
     }
@@ -278,9 +280,9 @@ template <class T, int V = 1> class table {
 
       query << "INSERT INTO " << T::classname() << "(";
 
-      COLUMNS_AND_VALUES_FOR_INSERT(integer, int, lorm::SQL_INTEGER, "")
-      COLUMNS_AND_VALUES_FOR_INSERT(str, std::string, lorm::SQL_STRING, "'")
-      COLUMNS_AND_VALUES_FOR_INSERT(numeric, double, lorm::SQL_NUMERIC, "")
+      COLUMNS_AND_VALUES_FOR_INSERT(int, lorm::SQL_INTEGER, "")
+      COLUMNS_AND_VALUES_FOR_INSERT(std::string, lorm::SQL_STRING, "'")
+      COLUMNS_AND_VALUES_FOR_INSERT(double, lorm::SQL_NUMERIC, "")
 
       query << cols.str();
       query << ") VALUES (";
@@ -302,9 +304,9 @@ template <class T, int V = 1> class table {
 
       std::string sep = " WHERE ";
       std::vector<lorm::column_t>::iterator it;
-      COLUMNS_AND_VALUES_FOR_SELECT(integer, int, lorm::SQL_INTEGER, "")
-      COLUMNS_AND_VALUES_FOR_SELECT(str, std::string, lorm::SQL_STRING, "'")
-      COLUMNS_AND_VALUES_FOR_SELECT(numeric, double, lorm::SQL_NUMERIC, "")
+      COLUMNS_AND_VALUES_FOR_SELECT(int, lorm::SQL_INTEGER, "")
+      COLUMNS_AND_VALUES_FOR_SELECT(std::string, lorm::SQL_STRING, "'")
+      COLUMNS_AND_VALUES_FOR_SELECT(double, lorm::SQL_NUMERIC, "")
 
       std::vector<std::map<std::string, std::string> > data = Lorm::getInstance()->select(query.str());
       if(data.size() > 0) {
@@ -323,9 +325,9 @@ template <class T, int V = 1> class table {
 
       std::string sep = " WHERE ";
       std::vector<lorm::column_t>::iterator it;
-      COLUMNS_AND_VALUES_FOR_SELECT(integer, int, lorm::SQL_INTEGER, "")
-      COLUMNS_AND_VALUES_FOR_SELECT(str, std::string, lorm::SQL_STRING, "'")
-      COLUMNS_AND_VALUES_FOR_SELECT(numeric, double, lorm::SQL_NUMERIC, "")
+      COLUMNS_AND_VALUES_FOR_SELECT(int, lorm::SQL_INTEGER, "")
+      COLUMNS_AND_VALUES_FOR_SELECT(std::string, lorm::SQL_STRING, "'")
+      COLUMNS_AND_VALUES_FOR_SELECT(double, lorm::SQL_NUMERIC, "")
 
       Lorm::getInstance()->execute(query.str());
     }
@@ -339,9 +341,9 @@ template <class T, int V = 1> class table {
 
       std::string sep = " WHERE ";
       std::vector<lorm::column_t>::iterator it;
-      COLUMNS_AND_VALUES_FOR_SELECT(integer, int, lorm::SQL_INTEGER, "")
-      COLUMNS_AND_VALUES_FOR_SELECT(str, std::string, lorm::SQL_STRING, "'")
-      COLUMNS_AND_VALUES_FOR_SELECT(numeric, double, lorm::SQL_NUMERIC, "")
+      COLUMNS_AND_VALUES_FOR_SELECT(int, lorm::SQL_INTEGER, "")
+      COLUMNS_AND_VALUES_FOR_SELECT(std::string, lorm::SQL_STRING, "'")
+      COLUMNS_AND_VALUES_FOR_SELECT(double, lorm::SQL_NUMERIC, "")
 
       std::vector<std::map<std::string, std::string> > data = Lorm::getInstance()->select(query.str());
       return util::from_string<int>(data[0]["count"]);
@@ -357,14 +359,14 @@ template <class T, int V = 1> class table {
       std::vector<lorm::column_t>::iterator it;
 
       std::string sep = " SET ";
-      COLUMNS_AND_VALUES(u, integer, int, lorm::SQL_INTEGER, "", ", ")
-      COLUMNS_AND_VALUES(u, str, std::string, lorm::SQL_STRING, "'", ", ")
-      COLUMNS_AND_VALUES(u, numeric, double, lorm::SQL_NUMERIC, "", ", ")
+      COLUMNS_AND_VALUES(u, int, lorm::SQL_INTEGER, "", ", ")
+      COLUMNS_AND_VALUES(u, std::string, lorm::SQL_STRING, "'", ", ")
+      COLUMNS_AND_VALUES(u, double, lorm::SQL_NUMERIC, "", ", ")
 
       sep = " WHERE ";
-      COLUMNS_AND_VALUES(t, integer, int, lorm::SQL_INTEGER, "", " AND ")
-      COLUMNS_AND_VALUES(t, str, std::string, lorm::SQL_STRING, "'", " AND ")
-      COLUMNS_AND_VALUES(t, numeric, double, lorm::SQL_NUMERIC, "", " AND ")
+      COLUMNS_AND_VALUES(t, int, lorm::SQL_INTEGER, "", " AND ")
+      COLUMNS_AND_VALUES(t, std::string, lorm::SQL_STRING, "'", " AND ")
+      COLUMNS_AND_VALUES(t, double, lorm::SQL_NUMERIC, "", " AND ")
 
       Lorm::getInstance()->execute(query.str());
 
@@ -382,13 +384,13 @@ template <class T, int V = 1> class table {
       std::vector<lorm::column_t>::iterator it;
 
       std::string sep = "\t";
-      COLUMNS_AND_VALUES(t, integer, int, lorm::SQL_INTEGER, "", "\n\t")
-      COLUMNS_AND_VALUES(t, str, std::string, lorm::SQL_STRING, "'", "\n\t")
-      COLUMNS_AND_VALUES(t, numeric, double, lorm::SQL_NUMERIC, "", "\n\t")
+      COLUMNS_AND_VALUES(t, int, lorm::SQL_INTEGER, "", "\n\t")
+      COLUMNS_AND_VALUES(t, std::string, lorm::SQL_STRING, "'", "\n\t")
+      COLUMNS_AND_VALUES(t, double, lorm::SQL_NUMERIC, "", "\n\t")
 
       return query.str();
     }
-
+  
     collection<T> get_selection(std::vector<std::map<std::string, std::string> > data, T t) {
       collection<T> result_list;
 
@@ -397,24 +399,30 @@ template <class T, int V = 1> class table {
         T result;
         std::vector<lorm::column_t>::iterator it;
 
-        for(it = result.columns_.begin(); it != result.columns_.end(); it++) {
+        for(it = columns_.begin(); it != columns_.end(); it++) {
           if((*itd).count((*it).name) > 0) {
             switch((*it).type) {
               case lorm::SQL_INTEGER:
                 {
-                  column<int> T::* f = result.integer_fields[(*it).name];
+                  column<int> T::* f=offset_to_columnref<int>((*it).offset);
                   (result.*f) = util::from_string<int>((*itd)[(*it).name]);
                 }
                 break;
               case lorm::SQL_STRING:
                 {
-                  column<std::string> T::* f = result.str_fields[(*it).name];
+                  column<std::string> T::* f=offset_to_columnref<std::string>((*it).offset);
                   (result.*f) = (*itd)[(*it).name];
                 }
                 break;
+//              case lorm::SQL_DATETIME:
+//              {
+//                column<datetime> T::* f=offset_to_columnref<datetime>((*it).offset);
+//                (result.*f) = datetime::from_sql((*itd)[(*it).name]);
+//              }
+//              break;
               case lorm::SQL_NUMERIC:
                 {
-                  column<double> T::* f = result.numeric_fields[(*it).name];
+                  column<double> T::* f=offset_to_columnref<double>((*it).offset);
                   (result.*f) = util::from_string<double>((*itd)[(*it).name]);
                 }
                 break;
@@ -432,10 +440,6 @@ template <class T, int V = 1> class table {
   protected:
     static std::string identity_col_;
     static std::vector<lorm::column_t> columns_;
-  private:
-    static FIELD_DATA(integer, int)
-    static FIELD_DATA(str, std::string)
-    static FIELD_DATA(numeric, double)
 };
 
 #define TABLE_INIT(K) \
@@ -453,9 +457,6 @@ template <class T, int V = 1> class table {
 
 #define REGISTER_TABLE(K, ...) \
   template <class K, int V> std::vector<lorm::column_t> table<K,V>::columns_;\
-  template <class K, int V> std::map<std::string, column<int> K::*> table<K,V>::integer_fields;\
-  template <class K, int V> std::map<std::string, column<double> K::*> table<K,V>::numeric_fields;\
-  template <class K, int V> std::map<std::string, column<std::string> K::*> table<K,V>::str_fields;\
   template <class K, int V> std::string table<K,V>::identity_col_;\
   void K::operator=(const K& o) { \
     FOR_EACH(DO_REGISTER_, o, __VA_ARGS__) \

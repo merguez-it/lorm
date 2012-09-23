@@ -6,7 +6,7 @@ REGISTER_TABLE(Person, id, num, name, desc, age) {
   field("name", &Person::name, false);
   field("desc", &Person::desc, std::string("guest"));
   field("age", &Person::age, 1.2);
-
+//  field("birthday",&Person::birthday, "1967-06-26");
 //  has_and_belongs_to_many("friends", &Person::friends); // TODO NYI
 //  has_one("address", &Person::address); // TODO NYI
 //  has_many("parents", &Person::parents); // TODO NYI
@@ -36,7 +36,7 @@ int main() {
   clark.name = "clark";
   clark.desc = "admin";
   clark.save();
-  std::cout << "INSERT clark ->\n" << john.to_string() << std::endl;
+  std::cout << "INSERT clark ->\n" << clark.to_string() << std::endl;
 
   // -- 
   Person bob_2 = Person::search_by_id(bob.id);
