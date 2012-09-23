@@ -9,13 +9,14 @@
 class abstract_column  {
 public:
   virtual std::string as_sql_litteral() = 0;
-  virtual std::string where(const std::string & name, const std::string & sep)=0;
-  virtual std::string sql_delimiter() =0;
+  virtual std::string where(const std::string & name)= 0;
+  virtual std::string sql_delimiter() = 0;
+  virtual bool is_null() const = 0;
 };
 
 template <class T> class column : public abstract_column {
   public:
-    virtual std::string as_sql_litteral() {throw 1;}
+    virtual std::string as_sql_litteral() {throw "as_sql_litteral() should be defined !!";}
     virtual std::string sql_delimiter() {return "";}
     column<T>(T* v): value(v), min_(NULL), max_(NULL), like_(NULL) {};
     column<T>(): value(NULL), min_(NULL), max_(NULL), like_(NULL) {};
@@ -45,7 +46,7 @@ template <class T> class column : public abstract_column {
       like_ = new T(v);
     }
 
-    virtual std::string where(const std::string & name, const std::string & sep) {
+    virtual std::string where(const std::string & name) {
       std::stringstream where;
 
       if(NULL != value) {
@@ -91,7 +92,7 @@ template <class T> std::ostream& operator<< (std::ostream& os, const column<T>& 
   return os;
 }
 
-// Specializations of abstract "as_sql_litteral()", type by type
+// Specializations of abstract entry-points, type by type
 template <> std::string column<int>::as_sql_litteral() {
   if (!is_null()) {
     return sql_delimiter() + util::to_string<int>(*value) + sql_delimiter();

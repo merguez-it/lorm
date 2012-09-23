@@ -15,7 +15,7 @@ REGISTER_TABLE(Person, id, num, name, desc, age) {
 
 int main() {
 //  Lorm::connect("sqlite://:memory:");
-  Lorm::connect("sqlite://person.db");
+  Lorm::connect("sqlite://person.db"); // Penser à  nettoyer person.db, sinon, les id augmentent et le test change
   Person::create();
 
   // -- 
@@ -27,6 +27,7 @@ int main() {
   // -- 
   Person john;
   john.name = "john";
+  john.num=666;
   john.age = 18.6;
   john = john.save();
   std::cout << "INSERT john ->\n" << john.to_string() << std::endl;
@@ -56,16 +57,16 @@ int main() {
   someone.id < 10;
   someone.id > 0;
 
-  collection<Person> peoples = someone.find();
-  std::cout << "Found " << peoples.size() << " " << someone.name << "(s) : " << std::endl;
+  collection<Person> people = someone.find();
+  std::cout << "Found " << people.size() << " " << someone.name << "(s) : " << std::endl;
   collection<Person>::iterator it;
-  for(it = peoples.begin(); it != peoples.end(); it++) {
+  for(it = people.begin(); it != people.end(); it++) {
     std::cout << "DELETE " << (*it).name << " #" << (*it).id << std::endl;
   }
-  peoples.remove();
+  people.remove();
 
   Person all;
-  std::cout << "Will remove " << all.count() << " entries"<< std::endl;
+  std::cout << "Delete all: Will remove " << all.count() << " entries"<< std::endl;
   all.remove();
   
   Lorm::disconnect();

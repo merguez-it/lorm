@@ -152,29 +152,13 @@
     x = o.x; \
   }
 
-#define COLUMNS_AND_VALUES_FOR_INSERT(TYPE, SQLTYPE, SEPARATOR) \
-  for(it = columns_.begin(); it != columns_.end(); it++) { \
-    if(SQLTYPE == (*it).type) {\
-      column<TYPE> T::* f = offset_to_columnref<TYPE>((*it).offset); \
-      if(NULL != (t.*f).value) { \
-        cols << sep << (*it).name; \
-        values << sep << SEPARATOR << (t.*f) << SEPARATOR; \
-        sep = ", "; \
-      } \
-    } \
-  }
+#define DEBUG 1
 
-#define COLUMNS_AND_VALUES_FOR_SELECT(TYPE, SQLTYPE, SEPARATOR) \
-  for(it = columns_.begin(); it != columns_.end(); it++) { \
-    if(SQLTYPE == (*it).type) { \
-      column<TYPE> T::* f = offset_to_columnref<TYPE>((*it).offset); \
-      std::string condition = (t.*f).where((*it).name, SEPARATOR); \
-      if(!condition.empty()) { \
-        query << sep << condition; \
-        sep = " AND "; \
-      } \
-    } \
-  }
+#ifdef DEBUG 
+#define DEBUG_QUERY(QUERY) std::cout << QUERY.str() << std::endl;
+#else 
+#define DEBUG_QUERY(QUERY) // Nada !
+#endif
 
 #define FIELD_FUN(CPPTYPE, LORMTYPE) \
    static void field(const std::string & col, column<CPPTYPE> T::* f, CPPTYPE def, bool nullable = true) { \
@@ -235,7 +219,7 @@ template <class T, int V = 1> class table {
       std::stringstream query;
       query << "SELECT * FROM " << T::classname();
       query << " WHERE " << T::identity_col_ << " = " << id << ";"; 
-        
+      DEBUG_QUERY(query)
       std::vector<std::map<std::string, std::string> > data = Lorm::getInstance()->select(query.str());
       if(data.size() > 1) {
         throw 1;
@@ -266,7 +250,7 @@ template <class T, int V = 1> class table {
       std::vector<lorm::column_t>::iterator it;
       for(it = columns_.begin(); it != columns_.end(); it++) {
         abstract_column& col=offset_to_column((*it).offset);
-        std::string condition = col.where((*it).name, "dummy");
+        std::string condition = col.where((*it).name);
         if(!condition.empty()) {
           result += next_keyword + condition;
           next_keyword = separator;
@@ -275,28 +259,45 @@ template <class T, int V = 1> class table {
       return result;
     }
   
+    void column_and_values_for_insert(/* out */ std::string& cols,/* out */ std::string& values) {
+      std::vector<lorm::column_t>::iterator it;
+      std::string sep="";
+      for(it = columns_.begin(); it != columns_.end(); it++) {
+        abstract_column& col = offset_to_column((*it).offset);
+        if( !col.is_null() ) {
+          cols  += sep + (*it).name;
+          values += sep + col.as_sql_litteral();
+          sep = ", ";
+        }
+      }
+    }
+
+    std::string column_and_values_for_select() {
+      std::string result;
+      std::string sep="";
+      std::vector<lorm::column_t>::iterator it;
+      for(it = columns_.begin(); it != columns_.end(); it++) {
+        abstract_column& col = offset_to_column( (*it).offset );
+        std::string condition = col.where((*it).name);
+        if( !condition.empty() ) {
+          result += sep + condition;
+          sep = " AND ";
+        }
+      }
+      return result;
+    }
+  
     T save_(T* const t) {
       return save_(*t);
     }
+  
     T save_(T t) {
+      std::string cols;
+      std::string values;
       std::stringstream query;
-      std::stringstream cols;
-      std::stringstream values;
-
-      std::string sep = "";
-      std::vector<lorm::column_t>::iterator it;
-
-      query << "INSERT INTO " << T::classname() << "(";
-
-      COLUMNS_AND_VALUES_FOR_INSERT(int, lorm::SQL_INTEGER, "")
-      COLUMNS_AND_VALUES_FOR_INSERT(std::string, lorm::SQL_STRING, "'")
-      COLUMNS_AND_VALUES_FOR_INSERT(double, lorm::SQL_NUMERIC, "")
-
-      query << cols.str();
-      query << ") VALUES (";
-      query << values.str();
-      query << ");";
-
+      t.column_and_values_for_insert(cols,values);
+      query << "INSERT INTO " << T::classname() << "(" << cols  << ") VALUES (" << values << ");";
+      DEBUG_QUERY(query)
       long id = (Lorm::getInstance()->execute(query.str()));
       return T::search_by_id(id);
     }
@@ -304,18 +305,16 @@ template <class T, int V = 1> class table {
     collection<T> find_(T* const t) {
       return find_(*t);
     }
+  
     collection<T> find_(T t) {
       collection<T> result;
-
       std::stringstream query;
       query << "SELECT * FROM " << T::classname();
-
-      std::string sep = " WHERE ";
-      std::vector<lorm::column_t>::iterator it;
-      COLUMNS_AND_VALUES_FOR_SELECT(int, lorm::SQL_INTEGER, "")
-      COLUMNS_AND_VALUES_FOR_SELECT(std::string, lorm::SQL_STRING, "'")
-      COLUMNS_AND_VALUES_FOR_SELECT(double, lorm::SQL_NUMERIC, "")
-
+      std::string clause_where=t.column_and_values_for_select();
+      if (!clause_where.empty()) {
+        query << " WHERE " << clause_where << ";";
+      }
+      DEBUG_QUERY(query)
       std::vector<std::map<std::string, std::string> > data = Lorm::getInstance()->select(query.str());
       if(data.size() > 0) {
         result = t.get_selection(data, t);
@@ -330,13 +329,11 @@ template <class T, int V = 1> class table {
     void remove_(T t) {
       std::stringstream query;
       query << "DELETE FROM " << T::classname();
-
-      std::string sep = " WHERE ";
-      std::vector<lorm::column_t>::iterator it;
-      COLUMNS_AND_VALUES_FOR_SELECT(int, lorm::SQL_INTEGER, "")
-      COLUMNS_AND_VALUES_FOR_SELECT(std::string, lorm::SQL_STRING, "'")
-      COLUMNS_AND_VALUES_FOR_SELECT(double, lorm::SQL_NUMERIC, "")
-
+      std::string clause_where=t.column_and_values_for_select();
+      if (!clause_where.empty()) {
+        query << " WHERE " << clause_where << ";";
+      }
+      DEBUG_QUERY(query)
       Lorm::getInstance()->execute(query.str());
     }
 
@@ -346,13 +343,11 @@ template <class T, int V = 1> class table {
     int count_(T t) {
       std::stringstream query;
       query << "SELECT COUNT(*) AS count FROM " << T::classname();
-
-      std::string sep = " WHERE ";
-      std::vector<lorm::column_t>::iterator it;
-      COLUMNS_AND_VALUES_FOR_SELECT(int, lorm::SQL_INTEGER, "")
-      COLUMNS_AND_VALUES_FOR_SELECT(std::string, lorm::SQL_STRING, "'")
-      COLUMNS_AND_VALUES_FOR_SELECT(double, lorm::SQL_NUMERIC, "")
-
+      std::string clause_where=t.column_and_values_for_select();
+      if (!clause_where.empty()) {
+        query << " WHERE " << clause_where << ";";
+      }
+      DEBUG_QUERY(query)
       std::vector<std::map<std::string, std::string> > data = Lorm::getInstance()->select(query.str());
       return util::from_string<int>(data[0]["count"]);
     }
@@ -367,7 +362,7 @@ template <class T, int V = 1> class table {
       query << u.column_and_values(keyword,", ");
       keyword= " WHERE ";
       query << t.column_and_values(keyword," AND ");
-      std::cout << query.str() << std::endl;
+      DEBUG_QUERY(query)
       Lorm::getInstance()->execute(query.str());
       T result = t;
       result = u;
@@ -461,7 +456,6 @@ template <class T, int V = 1> class table {
   std::string K::to_string() { return to_string_(this); } \
   void K::register_table() 
 
-#undef COLUMNS_AND_VALUES_FOR_INSERT
 #undef FIELD_FUN
 #undef FIELD_DATA
 
