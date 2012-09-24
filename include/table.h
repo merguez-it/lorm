@@ -64,7 +64,7 @@ template <class T, int V = 1> class table {
     FIELD_FUN(int, lorm::SQL_INTEGER)
     FIELD_FUN(std::string, lorm::SQL_STRING)
     FIELD_FUN(double, lorm::SQL_NUMERIC)
-//    FIELD_FUN(datetime,lorm::SQL_DATETIME)
+    FIELD_FUN(datetime,lorm::SQL_DATETIME)
     
     static void create() {
       T table;
@@ -259,12 +259,12 @@ template <class T, int V = 1> class table {
                   (result.*f) = (*itd)[(*it).name];
                 }
                 break;
-//              case lorm::SQL_DATETIME:
-//              {
-//                column<datetime> T::* f=offset_to_columnref<datetime>((*it).offset);
-//                (result.*f) = datetime::from_sql((*itd)[(*it).name]);
-//              }
-//              break;
+              case lorm::SQL_DATETIME:
+                {
+                  column<datetime> T::* f=offset_to_columnref<datetime>((*it).offset);
+                  (result.*f) = datetime::from_sql((*itd)[(*it).name]);
+                }
+                break;
               case lorm::SQL_NUMERIC:
                 {
                   column<double> T::* f=offset_to_columnref<double>((*it).offset);

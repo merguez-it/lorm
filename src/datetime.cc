@@ -16,7 +16,7 @@ datetime::datetime(const datetime & dt) {
   timeinfo.tm_isdst = -1;
 }
 
-datetime::datetime(const std::string &format, const std::string &s) {
+datetime::datetime(const std::string &format, const std::string &s) { //TODO: Traiter les dates sans HH:MM:SS dans le format
   if(NULL == ::strptime(s.c_str(), format.c_str(), &timeinfo)) {
     throw 3; // TODO
   }

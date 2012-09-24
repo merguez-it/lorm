@@ -25,3 +25,5 @@ TEST(DateTime, testSql) {
   ASSERT_EQ(dt.min(), 59);
   ASSERT_EQ(dt.sec(), 59);
 }
+
+//TODO: tester affectation, copie, comparaison, convertisseurs
