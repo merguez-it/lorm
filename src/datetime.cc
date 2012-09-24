@@ -68,6 +68,8 @@ datetime::datetime(int year, int month, int day, int hour, int min, int sec) {
   if(sec > -1 && sec < 60) {
     timeinfo_.tm_sec = sec;
   }
+
+  format = "%F %H:%M:%S";
 }
 
 datetime datetime::now() {
@@ -105,11 +107,11 @@ time_t datetime::to_time() {
   return mktime(&timeinfo_);
 }
 
-std::string datetime::to_sql() {
+std::string datetime::to_sql() const {
   return strftime(format);
 }
 
-std::string datetime::strftime(std::string format) {
+std::string datetime::strftime(std::string format) const {
   char buffer[STRFTIME_BUFFER_SIZE] = {0};
   if(0 == ::strftime(buffer, STRFTIME_BUFFER_SIZE, format.c_str(), &timeinfo_)) {
     throw 1; // TODO
@@ -133,6 +135,9 @@ bool datetime::operator<=(datetime dt) {
 }
 bool datetime::operator>=(datetime dt) {
   return interval(dt) <= 0; 
+}
+datetime::operator std::string() const {
+  return to_sql();
 }
 
 datetime & datetime::operator=(const std::string & dt) {

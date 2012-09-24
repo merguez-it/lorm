@@ -219,13 +219,11 @@ template <class T, int V = 1> class table {
       std::string keyword = " SET ";
       query << "UPDATE " << T::classname();
       query << u.column_and_values(keyword,", ");
-      keyword= " WHERE ";
+      keyword = " WHERE ";
       query << t.column_and_values(keyword," AND ");
       DEBUG_QUERY(query)
       Lorm::getInstance()->execute(query.str());
-      T result = t;
-      result = u;
-      return result;
+      return T::search_by_id(t.id);
     }
 
     std::string to_string_(T* const t) {
@@ -262,7 +260,7 @@ template <class T, int V = 1> class table {
               case lorm::SQL_DATETIME:
                 {
                   column<datetime> T::* f=offset_to_columnref<datetime>((*it).offset);
-                  (result.*f) = datetime::from_sql((*itd)[(*it).name]);
+                  (result.*f) = datetime::datetime((*itd)[(*it).name]);
                 }
                 break;
               case lorm::SQL_NUMERIC:
@@ -296,7 +294,7 @@ template <class T, int V = 1> class table {
   std::string to_string(); \
   static std::string classname() { return pluralize(lower(#K)); }
 
-#define REGISTER_TABLE(K, ...) \
+#define REGISTER_TABLE(K) \
   template <class K, int V> std::vector<lorm::column_t> table<K,V>::columns_;\
   template <class K, int V> std::string table<K,V>::identity_col_;\
   K::K() {if (columns_.empty() ) K::register_table(); } \

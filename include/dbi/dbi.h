@@ -2,6 +2,7 @@
 #define __LORM_DBI_H
 
 #include "any.h"
+#include "datetime.h"
 
 #include <string>
 #include <map>

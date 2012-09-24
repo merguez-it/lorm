@@ -38,6 +38,20 @@ template <class T> class column : public abstract_column {
       min_ = new T(v);
     }
 
+    bool operator==(T v) {
+      if(NULL != value) {
+        return *value == v;
+      }
+      return false;
+    }
+
+    bool operator==(column<T> v) {
+      if(NULL != value) {
+        return *value == *(v.value);
+      }
+      return false;
+    }
+
     void between(T m, T n) {
       min_ = new T(m);
       max_ = new T(n);
@@ -125,7 +139,12 @@ template <> std::string column<double>::as_sql_litteral() {
 
 template <> std::string column<datetime>::as_sql_litteral() {
   if (!is_null()) {
-    return sql_delimiter()+(*value).to_sql()+sql_delimiter();
+    std::stringstream litteral;
+    litteral << sql_delimiter();
+    litteral << (*value);
+    litteral << sql_delimiter();
+
+    return litteral.str();
   }
   return sql_delimiter()+sql_delimiter();
 }

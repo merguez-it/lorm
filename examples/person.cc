@@ -1,12 +1,12 @@
 #include "person.h"
 
-REGISTER_TABLE(Person, id, num, name, desc, age) {
+REGISTER_TABLE(Person) {
   identity("id", &Person::id); // ID
   field("num", &Person::num, 123, false); // NOT_NULL
   field("name", &Person::name, false);
   field("desc", &Person::desc, std::string("guest"));
   field("age", &Person::age, 1.2);
-  field("birthday",&Person::birthday, "1967-06-26 00:00:00");
+  field("birthday", &Person::birthday, datetime("1967-06-26 00:00:00"));
 //  has_and_belongs_to_many("friends", &Person::friends); // TODO NYI
 //  has_one("address", &Person::address); // TODO NYI
 //  has_many("parents", &Person::parents); // TODO NYI
@@ -36,7 +36,7 @@ int main() {
   Person clark;
   clark.name = "clark";
   clark.desc = "admin";
-  clark.birthday = datetime("%F %H:%M:%S","1955-04-22 00:00:00");
+  clark.birthday = datetime("1955-04-22");
   clark.save();
   std::cout << "INSERT clark ->\n" << clark.to_string() << std::endl;
 

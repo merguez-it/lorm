@@ -52,4 +52,7 @@ TEST(DateTime, testEqual) {
   ASSERT_EQ(dt.hour(), 12);
   ASSERT_EQ(dt.min(), 34);
   ASSERT_EQ(dt.sec(), 56);
+
+  std::string toto = dt;
+  ASSERT_EQ("12:34:56", toto);
 }

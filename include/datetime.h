@@ -23,15 +23,16 @@ class datetime {
 
     double interval(datetime dt);
     time_t to_time();
-    std::string to_sql();
+    std::string to_sql() const;
 
-    std::string strftime(std::string format);
+    std::string strftime(std::string format) const;
     
     bool operator==(datetime dt);
     bool operator<(datetime dt);
     bool operator>(datetime dt);
     bool operator<=(datetime dt);
     bool operator>=(datetime dt);
+    operator std::string() const;
 
     datetime & operator=(const std::string & dt);
 

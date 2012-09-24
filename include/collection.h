@@ -13,5 +13,10 @@ template <class T> class collection : public std::vector<T> {
       for(it = this->begin(); it != this->end(); it++) {
         (*it).remove();
       }
+      this->clear();
+    }
+
+    size_t count() {
+      return this->size();
     }
 };

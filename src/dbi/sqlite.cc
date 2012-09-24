@@ -53,7 +53,7 @@ namespace lorm {
             query << "'" << any_cast<std::string>((*it).default_value) << "'";
             break;
           case SQL_DATETIME:
-            query << "'" << any_cast<std::string>((*it).default_value) << "'";
+            query << "'" << any_cast<datetime>((*it).default_value) << "'";
             break;
           case SQL_INTEGER:
             query << any_cast<int>((*it).default_value);
