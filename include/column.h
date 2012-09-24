@@ -5,6 +5,7 @@
 #include <iostream>
 
 #include "types.h"
+#include "datetime.h"
 
 class abstract_column  {
 public:
@@ -104,6 +105,10 @@ template <> std::string column<std::string>::sql_delimiter() {
   return "'";
 }
 
+template <> std::string column<datetime>::sql_delimiter() {
+  return "'";
+}
+
 template <> std::string column<std::string>::as_sql_litteral() {
   if (!is_null()) {
     return sql_delimiter()+(*value)+sql_delimiter();
@@ -113,7 +118,14 @@ template <> std::string column<std::string>::as_sql_litteral() {
 
 template <> std::string column<double>::as_sql_litteral() {
   if (!is_null()) {
-    return sql_delimiter()+util::to_string<double>(*value);
+    return sql_delimiter()+util::to_string<double>(*value)+sql_delimiter();
+  }
+  return sql_delimiter()+sql_delimiter();
+}
+
+template <> std::string column<datetime>::as_sql_litteral() {
+  if (!is_null()) {
+    return sql_delimiter()+(*value).to_sql()+sql_delimiter();
   }
   return sql_delimiter()+sql_delimiter();
 }

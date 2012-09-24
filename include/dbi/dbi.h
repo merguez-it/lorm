@@ -11,8 +11,8 @@ namespace lorm {
   enum dbi_column_type {
     SQL_STRING,
     SQL_INTEGER,
-    SQL_NUMERIC
-    //SQL_DATETIME
+    SQL_NUMERIC,
+    SQL_DATETIME
   };
 
   struct column_t {
