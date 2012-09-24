@@ -17,7 +17,6 @@ int main() {
 //  Lorm::connect("sqlite://:memory:");
   Lorm::connect("sqlite://person.db"); // Penser à  nettoyer person.db, sinon, les id augmentent et le test change
   Person::create();
-
   // -- 
   Person bob;
   bob.name = "bob";
