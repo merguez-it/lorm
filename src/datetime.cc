@@ -1,56 +1,72 @@
 #include "datetime.h"
+#include "vector_util.h"
 
 #define STRFTIME_BUFFER_SIZE 1024
 
 datetime::datetime(const datetime & dt) {
   time_t rawtime;
   time(&rawtime);
-  localtime_r(&rawtime, &timeinfo);
+  localtime_r(&rawtime, &timeinfo_);
 
-  timeinfo.tm_year = dt.year() - 1900;
-  timeinfo.tm_mon = dt.mon() - 1;
-  timeinfo.tm_mday = dt.day();
-  timeinfo.tm_hour = dt.hour();
-  timeinfo.tm_min = dt.min();
-  timeinfo.tm_sec = dt.sec();
-  timeinfo.tm_isdst = -1;
+  timeinfo_.tm_year = dt.year() - 1900;
+  timeinfo_.tm_mon = dt.mon() - 1;
+  timeinfo_.tm_mday = dt.day();
+  timeinfo_.tm_hour = dt.hour();
+  timeinfo_.tm_min = dt.min();
+  timeinfo_.tm_sec = dt.sec();
+  timeinfo_.tm_isdst = -1;
+  format = dt.format;
 }
 
-datetime::datetime(const std::string &format, const std::string &s) {
-  if(NULL == ::strptime(s.c_str(), format.c_str(), &timeinfo)) {
+datetime::datetime(const std::string &f, const std::string &s) {
+  memset(&timeinfo_, 0, sizeof(timeinfo_));
+  if(NULL == ::strptime(s.c_str(), f.c_str(), &timeinfo_)) {
     throw 3; // TODO
   }
-  timeinfo.tm_isdst = -1;
+  format = f;
+  timeinfo_.tm_isdst = -1;
+}
+
+datetime::datetime(const std::string & s) {
+  std::vector<std::string> formats = create_vector<std::string>("%F %H:%M:%S")("%F")("%H:%M:%S");
+  std::vector<std::string>::iterator it;
+  for(it = formats.begin(); it != formats.end(); it++) {
+    memset(&timeinfo_, 0, sizeof(timeinfo_));
+    if(NULL != ::strptime(s.c_str(), (*it).c_str(), &timeinfo_)) {
+      format = *it;
+      break;
+    }
+  }
 }
 
 datetime::datetime(int year, int month, int day, int hour, int min, int sec) {
   time_t rawtime;
   time(&rawtime);
-  localtime_r(&rawtime, &timeinfo);
-  timeinfo.tm_isdst = -1;
+  localtime_r(&rawtime, &timeinfo_);
+  timeinfo_.tm_isdst = -1;
 
   if(year > 1899) {
-    timeinfo.tm_year = year - 1900;
+    timeinfo_.tm_year = year - 1900;
   }
 
   if(month > 0 && month < 13) {
-    timeinfo.tm_mon = month - 1;
+    timeinfo_.tm_mon = month - 1;
   }
 
   if(day > 0 && day < 32) {
-    timeinfo.tm_mday = day;
+    timeinfo_.tm_mday = day;
   }
 
   if(hour > -1 && hour < 24) {
-    timeinfo.tm_hour = hour;
+    timeinfo_.tm_hour = hour;
   }
 
   if(min > -1 && min < 60) {
-    timeinfo.tm_min = min;
+    timeinfo_.tm_min = min;
   }
 
   if(sec > -1 && sec < 60) {
-    timeinfo.tm_sec = sec;
+    timeinfo_.tm_sec = sec;
   }
 }
 
@@ -63,22 +79,22 @@ datetime datetime::from_sql(const std::string & s) {
 }
 
 int datetime::year() const {
-  return timeinfo.tm_year + 1900;
+  return timeinfo_.tm_year + 1900;
 }
 int datetime::mon() const {
-  return timeinfo.tm_mon + 1;
+  return timeinfo_.tm_mon + 1;
 }
 int datetime::day() const {
-  return timeinfo.tm_mday;
+  return timeinfo_.tm_mday;
 }
 int datetime::hour() const {
-  return timeinfo.tm_hour;
+  return timeinfo_.tm_hour;
 }
 int datetime::min() const {
-  return timeinfo.tm_min;
+  return timeinfo_.tm_min;
 }
 int datetime::sec() const {
-  return timeinfo.tm_sec;
+  return timeinfo_.tm_sec;
 }
 
 double datetime::interval(datetime dt) {
@@ -86,16 +102,16 @@ double datetime::interval(datetime dt) {
 }
 
 time_t datetime::to_time() {
-  return mktime(&timeinfo);
+  return mktime(&timeinfo_);
 }
 
 std::string datetime::to_sql() {
-  return strftime("%F %H:%M:%S");
+  return strftime(format);
 }
 
 std::string datetime::strftime(std::string format) {
   char buffer[STRFTIME_BUFFER_SIZE] = {0};
-  if(0 == ::strftime(buffer, STRFTIME_BUFFER_SIZE, format.c_str(), &timeinfo)) {
+  if(0 == ::strftime(buffer, STRFTIME_BUFFER_SIZE, format.c_str(), &timeinfo_)) {
     throw 1; // TODO
   }
 
@@ -119,7 +135,12 @@ bool datetime::operator>=(datetime dt) {
   return interval(dt) <= 0; 
 }
 
+datetime & datetime::operator=(const std::string & dt) {
+  *this = datetime::datetime(dt);
+  return *this;
+}
+
 std::ostream& operator<<(std::ostream& out, datetime dt) {
-  return out << dt.strftime("%F %H:%M:%S");
+  return out << dt.strftime(dt.format);
 }
 
