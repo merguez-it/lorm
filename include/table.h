@@ -283,7 +283,7 @@ template <class T, int V = 1> class table {
     static std::vector<lorm::column_t> columns_;
 };
 
-#define TABLE_INIT(K) \
+#define TABLE_INIT(K, ...) \
   K(); \
   static void register_table();\
   K save(); \
@@ -292,7 +292,7 @@ template <class T, int V = 1> class table {
   K update(K u); \
   void remove(); \
   std::string to_string(); \
-  static std::string classname() { return pluralize(lower(#K)); }
+  static std::string classname() { std::string cname = #__VA_ARGS__; if(cname.empty()) { return pluralize(lower(#K)); } return cname; }
 
 #define REGISTER_TABLE(K) \
   template <class K, int V> std::vector<lorm::column_t> table<K,V>::columns_;\
