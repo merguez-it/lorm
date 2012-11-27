@@ -17,10 +17,10 @@
 #define CONCATENATE1(arg1, arg2)  CONCATENATE2(arg1, arg2)
 #define CONCATENATE2(arg1, arg2)  arg1##arg2
 
-#define FOR_EACH_NARG(...) FOR_EACH_NARG_(__VA_ARGS__, FOR_EACH_RSEQ_N())
+#define COUNT_ARGS(...) FOR_EACH_NARG_(__VA_ARGS__, FOR_EACH_RSEQ_N())
 #define FOR_EACH_NARG_(...) FOR_EACH_ARG_N(__VA_ARGS__) 
 #define FOR_EACH_ARG_N( \
-_1,  _2,  _3,  _4,  _5,  _6,  _7,  _8,  _9, _10, \
+ _1,  _2,  _3,  _4,  _5,  _6,  _7,  _8,  _9, _10, \
 _11, _12, _13, _14, _15, _16, _17, _18, _19, _20, \
 _21, _22, _23, _24, _25, _26, _27, _28, _29, _30, \
 _31, _32, _33, _34, _35, _36, _37, _38, _39, _40, \
@@ -141,15 +141,7 @@ _91, _92, _93, _94, _95, _96, _97, _98, _99,   N, ...) N
 #define FOR_EACH_97(what, o, x, ...) what(o, x) FOR_EACH_96(what, o, __VA_ARGS__)
 
 #define FOR_EACH_(N, what, o, x, ...) CONCATENATE(FOR_EACH_, N)(what, o, x, __VA_ARGS__)
-#define FOR_EACH(what, o, x, ...) FOR_EACH_(FOR_EACH_NARG(x, __VA_ARGS__), what, o, x, __VA_ARGS__)
+#define FOR_EACH(what, o, x, ...) FOR_EACH_(COUNT_ARGS(x, __VA_ARGS__), what, o, x, __VA_ARGS__)
 
-//#define DO_REGISTER_(o, x) \
-//  if(!o.x.is_null()) { \
-//    x = o.x; \
-//  }
-
-//  void K::operator=(const K& o) { \
-//    FOR_EACH(DO_REGISTER_, o, __VA_ARGS__) \
-//  }\
 
 #endif // __MACRO_UTILS_H

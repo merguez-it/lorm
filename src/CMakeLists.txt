@@ -10,6 +10,7 @@ set(LORM_SOURCES
   datetime.cc
   util.cc
   db.cc
+  column.cc
   )
 
 

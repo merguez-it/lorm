@@ -7,6 +7,7 @@
 #include "util.h"
 #include "types.h"
 #include "datetime.h"
+#include <tr1/memory>
 #include <string>
 #include <vector>
 #include <map>
@@ -57,23 +58,33 @@
      columns_.push_back(c); \
    } 
 
-template <class T, int V = 1> class table {
-  public: 
+#define IDENTITY_NOT_SET -1
 
+typedef std::vector<lorm::column_t> columns_desc;
+
+template <class T> class table {
+  public: 
+    static std::string identity_col_;
+    static columns_desc columns_;
     ID_FUN(int)
     FIELD_FUN(int, lorm::SQL_INTEGER)
     FIELD_FUN(std::string, lorm::SQL_STRING)
     FIELD_FUN(double, lorm::SQL_NUMERIC)
     FIELD_FUN(datetime,lorm::SQL_DATETIME)
-    
+  
+    static void has_one(const std::string & col, column<int> T::* f) {
+      field(col,f,IDENTITY_NOT_SET);
+    }
+  
     static void create() {
       T table;
       Lorm::getInstance()->create_table(T::classname(), table.columns_);
     }
-
+      
     static T search_by_id(column<int> id) {
       return search_by_id(*id.value);
     }
+  
     static T search_by_id(int id) {
       T result;
 
@@ -83,7 +94,7 @@ template <class T, int V = 1> class table {
       DEBUG_QUERY(query)
       std::vector<std::map<std::string, std::string> > data = Lorm::getInstance()->select(query.str());
       if(data.size() > 1) {
-        throw 1;
+        throw "Unique id is not unique : "+ id;
       }
       if(data.size() == 1) {
         result = (result.get_selection(data, result))[0];
@@ -91,7 +102,52 @@ template <class T, int V = 1> class table {
 
       return result;
     }
-
+    
+  collection<T> get_selection(std::vector<std::map<std::string, std::string> > data, T t) {
+    collection<T> result_list;
+    
+    std::vector<std::map<std::string, std::string> >::iterator itd;
+    for(itd = data.begin(); itd != data.end(); itd++) {
+      T result;
+      columns_desc::iterator it;
+      
+      for(it = columns_.begin(); it != columns_.end(); it++) {
+        if((*itd).count((*it).name) > 0) {
+          switch((*it).type) {
+            case lorm::SQL_INTEGER:
+            {
+              column<int> T::* f=offset_to_columnref<int>((*it).offset);
+              (result.*f) = util::from_string<int>((*itd)[(*it).name]);
+            }
+              break;
+            case lorm::SQL_STRING:
+            {
+              column<std::string> T::* f=offset_to_columnref<std::string>((*it).offset);
+              (result.*f) = (*itd)[(*it).name];
+            }
+              break;
+            case lorm::SQL_DATETIME:
+            {
+              column<datetime> T::* f=offset_to_columnref<datetime>((*it).offset);
+              (result.*f) = datetime::datetime((*itd)[(*it).name]);
+            }
+              break;
+            case lorm::SQL_NUMERIC:
+            {
+              column<double> T::* f=offset_to_columnref<double>((*it).offset);
+              (result.*f) = util::from_string<double>((*itd)[(*it).name]);
+            }
+              break;
+            default:
+              throw "DB Type not defined"; // TODO
+          }
+        }
+      }
+      result_list.push_back(result);
+    }
+    return result_list;
+  }
+  
   protected:
   
     template <typename CPPTYPE> column<CPPTYPE> T::* offset_to_columnref(unsigned long offset) {
@@ -108,7 +164,7 @@ template <class T, int V = 1> class table {
     
     std::string column_and_values(std::string next_keyword, const std::string &separator) {
       std::string result;
-      std::vector<lorm::column_t>::iterator it;
+      columns_desc::iterator it;
       for(it = columns_.begin(); it != columns_.end(); it++) {
         abstract_column& col=offset_to_column((*it).offset);
         std::string condition = col.where((*it).name);
@@ -121,7 +177,7 @@ template <class T, int V = 1> class table {
     }
   
     void column_and_values_for_insert(/* out */ std::string& cols,/* out */ std::string& values) {
-      std::vector<lorm::column_t>::iterator it;
+      columns_desc::iterator it;
       std::string sep="";
       for(it = columns_.begin(); it != columns_.end(); it++) {
         abstract_column& col = offset_to_column((*it).offset);
@@ -136,7 +192,7 @@ template <class T, int V = 1> class table {
     std::string column_and_values_for_select() {
       std::string result;
       std::string sep="";
-      std::vector<lorm::column_t>::iterator it;
+      columns_desc::iterator it;
       for(it = columns_.begin(); it != columns_.end(); it++) {
         abstract_column& col = offset_to_column( (*it).offset );
         std::string condition = col.where((*it).name);
@@ -152,7 +208,7 @@ template <class T, int V = 1> class table {
       return save_(*t);
     }
   
-    T save_(T t) {
+    T save_(T t) { //TODO: Make this method working for any case : insert or update, no matter)
       std::string cols;
       std::string values;
       std::stringstream query;
@@ -233,55 +289,51 @@ template <class T, int V = 1> class table {
     std::string to_string_(T t) {
       return t.column_and_values("\t", "\n\t");
     }
-  
-    collection<T> get_selection(std::vector<std::map<std::string, std::string> > data, T t) {
-      collection<T> result_list;
-
-      std::vector<std::map<std::string, std::string> >::iterator itd;
-      for(itd = data.begin(); itd != data.end(); itd++) {
-        T result;
-        std::vector<lorm::column_t>::iterator it;
-
-        for(it = columns_.begin(); it != columns_.end(); it++) {
-          if((*itd).count((*it).name) > 0) {
-            switch((*it).type) {
-              case lorm::SQL_INTEGER:
-                {
-                  column<int> T::* f=offset_to_columnref<int>((*it).offset);
-                  (result.*f) = util::from_string<int>((*itd)[(*it).name]);
-                }
-                break;
-              case lorm::SQL_STRING:
-                {
-                  column<std::string> T::* f=offset_to_columnref<std::string>((*it).offset);
-                  (result.*f) = (*itd)[(*it).name];
-                }
-                break;
-              case lorm::SQL_DATETIME:
-                {
-                  column<datetime> T::* f=offset_to_columnref<datetime>((*it).offset);
-                  (result.*f) = datetime::datetime((*itd)[(*it).name]);
-                }
-                break;
-              case lorm::SQL_NUMERIC:
-                {
-                  column<double> T::* f=offset_to_columnref<double>((*it).offset);
-                  (result.*f) = util::from_string<double>((*itd)[(*it).name]);
-                }
-                break;
-              default:
-                throw 1; // TODO
-            }
-          }
-        }
-        result_list.push_back(result);
+    
+    template <class FOREIGN> FOREIGN load_has_one(int foreign_id) {
+      FOREIGN result;
+      
+      std::stringstream query;
+      query << "SELECT * FROM " << FOREIGN::classname();
+      query << " WHERE " << FOREIGN::identity_col_ << " = " << foreign_id << ";"; 
+      DEBUG_QUERY(query)
+      std::vector<std::map<std::string, std::string> > data = Lorm::getInstance()->select(query.str());
+      if(data.size() > 1) {
+        throw "Unique object id is not unique :" + foreign_id;
       }
-      return result_list;
+      if(data.size() == 1) {
+        result = (result.get_selection(data, result))[0];
+      }
+      return result;
     }
-  protected:
-    static std::string identity_col_;
-    static std::vector<lorm::column_t> columns_;
 };
+
+#define SELECT_MACRO_FROM_N(N,FOREIGN_CLASS,...)  CONCATENATE(HAS_ONE_,N)(FOREIGN_CLASS,__VA_ARGS__)
+#define HAS_ONE(FOREIGN_CLASS,...) SELECT_MACRO_FROM_N(COUNT_ARGS(__VA_ARGS__),FOREIGN_CLASS,__VA_ARGS__)
+
+#define HAS_ONE_1(FOREIGN_CLASS,role)  HAS_ONE_2(FOREIGN_CLASS,role,role##_id)
+
+#define HAS_ONE_2(FOREIGN_CLASS,role,roleId)\
+private:\
+  std::tr1::shared_ptr<FOREIGN_CLASS> role##_;\
+public:\
+  column<int> roleId;\
+  FOREIGN_CLASS role (bool force_reload=false) {\
+    if (!role##_.get() || force_reload) {\
+      role##_.reset(new FOREIGN_CLASS());\
+      *role##_=this->load_has_one<FOREIGN_CLASS>(*(roleId.value));\
+    }\
+    return *role##_;\
+  }\
+  void role (const FOREIGN_CLASS &that_role) {\
+    if (IDENTITY_NOT_SET==*(that_role.id.value)) {\
+      throw "Identity not set !!";\
+    }\
+    roleId=that_role.id.value;\
+    FOREIGN_CLASS *p=new FOREIGN_CLASS(that_role);\
+    role##_.reset(p);\
+  }\
+
 
 #define TABLE_INIT(K, ...) \
   K(); \
@@ -294,9 +346,10 @@ template <class T, int V = 1> class table {
   std::string to_string(); \
   static std::string classname() { std::string cname = #__VA_ARGS__; if(cname.empty()) { return pluralize(lower(#K)); } return cname; }
 
+
 #define REGISTER_TABLE(K) \
-  template <class K, int V> std::vector<lorm::column_t> table<K,V>::columns_;\
-  template <class K, int V> std::string table<K,V>::identity_col_;\
+  template <class T> std::vector<lorm::column_t> table<K>::columns_;\
+  template <class T> std::string table<K>::identity_col_;\
   K::K() {if (columns_.empty() ) K::register_table(); } \
   K K::save() { return save_(this); } \
   collection<K> K::find() { return find_(this); } \

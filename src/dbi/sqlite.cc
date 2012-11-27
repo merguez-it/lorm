@@ -31,7 +31,7 @@ namespace lorm {
   long sqlite::execute(const std::string &query) {
     char *err; 
     if(SQLITE_OK != sqlite3_exec(db_, query.c_str(), NULL, 0, &err)) {
-      throw 1; // TODO
+      throw err; // TODO
     }
     return sqlite3_last_insert_rowid(db_);
   }

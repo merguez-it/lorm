@@ -6,5 +6,5 @@ include_directories(
   ${LORM_SOURCE_DIR}/include
   )
 
-add_executable(sample_person "person.cc")
+add_executable(sample_person "person.cc" "address.cc")
 target_link_libraries(sample_person lorm-static)
