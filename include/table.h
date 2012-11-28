@@ -72,9 +72,14 @@ template <class T> class table {
     FIELD_FUN(std::string, lorm::SQL_STRING)
     FIELD_FUN(double, lorm::SQL_NUMERIC)
     FIELD_FUN(datetime,lorm::SQL_DATETIME)
+
+//    static void has_one(const std::string & col, column<int> T::*f ) {
+//      field(col,f);
+//    }
   
-    template < class FOREIGN > static void has_one(const std::string & col, reference<FOREIGN> T::* f) {
-      field(col, (column<int> T::*)f );
+    template <class FOREIGN_CLASS> 
+    static void has_one(const std::string & col, reference<FOREIGN_CLASS> T::*f ) {
+      field(col,reinterpret_cast<column<int> T::*>(f));
     }
   
     static void create() {

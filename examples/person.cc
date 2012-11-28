@@ -8,8 +8,8 @@ REGISTER_TABLE(Person) {
   field("desc", &Person::desc, std::string("guest"));
   field("age", &Person::age, 1.2);
   field("birthday", &Person::birthday, datetime("1967-06-26 00:00:00"));
-  has_one<Address>("address_id", &Person::address);
-  has_one<Address>("office_id", &Person::bureau);
+  has_one("address_id", &Person::address);
+  has_one("office_id", &Person::bureau);
 //  has_and_belongs_to_many("friends", &Person::friends); // TODO NYI
 //  has_many("parents", &Person::parents); // TODO NYI
 }

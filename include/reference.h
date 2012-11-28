@@ -17,13 +17,15 @@
  *  
  */
 #include <memory>
+#include "column.h"
 
-template < class FOREIGN_CLASS > class reference {
-public:
-  column<int> roleId;
+
+template < class FOREIGN_CLASS > 
+class reference : public column<int> {
+public:  
   
   bool exists() {
-    return roleId.value!=NULL;
+    return value!=NULL;
   }
   
   FOREIGN_CLASS& operator() (bool force_reload=false) {
@@ -33,14 +35,14 @@ public:
   void operator() (const FOREIGN_CLASS &that_role) {
      set_role(that_role);
   }
-  
+    
 private:
   std::tr1::shared_ptr<FOREIGN_CLASS> role;
   
   FOREIGN_CLASS &get_role (bool force_reload=false) {
     if (!role.get() || force_reload) {
       role.reset(new FOREIGN_CLASS());
-      *role=FOREIGN_CLASS::search_by_id(roleId);
+      *role=FOREIGN_CLASS::search_by_id(value);
     }
     return *role;
   }
@@ -49,7 +51,7 @@ private:
     if (NULL==that_role.id.value) {
       throw "Identity not set !!";
     }
-    roleId=that_role.id.value;
+    *(column<int> *)this = *(that_role.id.value);
     FOREIGN_CLASS *p=new FOREIGN_CLASS(that_role);
     role.reset(p);
   }

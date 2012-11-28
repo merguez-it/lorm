@@ -26,8 +26,6 @@ class Person : public table<Person> {
     column<std::string> desc;
     column<double> age;
     column<datetime> birthday;
-//    HAS_ONE(Address,address);
-//    HAS_ONE(Address,office,bureauId);
     reference<Address> address;
     reference<Address> office;
 };
@@ -39,8 +37,8 @@ REGISTER_TABLE(Person) {
   field("desc", &Person::desc, std::string("guest"));
   field("age", &Person::age, 1.2);
   field("birthday", &Person::birthday, datetime("1967-06-26 00:00:00"));
-  has_one<Address>("address_id", &Person::address);
-  has_one<Address>("bureauId", &Person::office);
+  has_one("address_id", &Person::address);
+  has_one("bureauId", &Person::office);
 }
 
 TEST(To_one, create_retrieve_two_relationships) {
