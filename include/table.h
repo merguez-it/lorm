@@ -290,23 +290,6 @@ template <class T> class table {
     std::string to_string_(T t) {
       return t.column_and_values("\t", "\n\t");
     }
-    
-    template <class FOREIGN> FOREIGN load_has_one(int foreign_id) {
-      FOREIGN result;
-      
-      std::stringstream query;
-      query << "SELECT * FROM " << FOREIGN::classname();
-      query << " WHERE " << FOREIGN::identity_col_ << " = " << foreign_id << ";"; 
-      DEBUG_QUERY(query)
-      std::vector<std::map<std::string, std::string> > data = Lorm::getInstance()->select(query.str());
-      if(data.size() > 1) {
-        throw "Unique object id is not unique :" + foreign_id;
-      }
-      if(data.size() == 1) {
-        result = (result.get_selection(data, result))[0];
-      }
-      return result;
-    }
 };
 
 #define TABLE_INIT(K, ...) \
