@@ -1,7 +1,6 @@
 #ifndef __PERSON_H
 #define __PERSON_H
 
-#include "macro_utils.h"
 #include "lorm.h"
 #include "Address.h"
 
@@ -15,8 +14,8 @@ class Person : public table<Person> {
     column<std::string> desc;
     column<double> age;
     column<datetime> birthday;
-    HAS_ONE(Address,address)
-    HAS_ONE(Address,bureau,office_id)
+    reference<Address> address;
+    reference<Address> bureau;
 };
 
 #endif // __PERSON_H

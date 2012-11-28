@@ -26,8 +26,10 @@ class Person : public table<Person> {
     column<std::string> desc;
     column<double> age;
     column<datetime> birthday;
-    HAS_ONE(Address,address);
-    HAS_ONE(Address,office,bureauId);
+//    HAS_ONE(Address,address);
+//    HAS_ONE(Address,office,bureauId);
+    reference<Address> address;
+    reference<Address> office;
 };
 
 REGISTER_TABLE(Person) {
@@ -37,8 +39,8 @@ REGISTER_TABLE(Person) {
   field("desc", &Person::desc, std::string("guest"));
   field("age", &Person::age, 1.2);
   field("birthday", &Person::birthday, datetime("1967-06-26 00:00:00"));
-  has_one("address_id", &Person::address_id);
-  has_one("bureauId", &Person::bureauId);
+  has_one<Address>("address_id", &Person::address);
+  has_one<Address>("bureauId", &Person::office);
 }
 
 TEST(To_one, create_retrieve_two_relationships) {
@@ -51,14 +53,14 @@ TEST(To_one, create_retrieve_two_relationships) {
   john_home.zip=59000;
   john_home.city="Lille";
   john_home=john_home.save();
-  ASSERT_TRUE(john_home.id!=IDENTITY_NOT_SET);
+  ASSERT_TRUE(john_home.id.value!=NULL);
   
   Address john_office;
   john_office.street="21 Rue Camille-Desmoulins";
   john_office.zip=92789;
   john_office.city="Issy-Les-Moulineaux";
   john_office=john_office.save();
-  ASSERT_TRUE(john_office.id!=IDENTITY_NOT_SET);
+  ASSERT_TRUE(john_office.id.value!=NULL);
 
   Person john;
   john.name = "john";

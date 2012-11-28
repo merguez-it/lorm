@@ -14,6 +14,8 @@
 #include <sstream>
 #include <iostream>
 
+#include "reference.h"
+
 #define DEBUG 1
 
 #ifdef DEBUG 
@@ -58,7 +60,6 @@
      columns_.push_back(c); \
    } 
 
-#define IDENTITY_NOT_SET -1
 
 typedef std::vector<lorm::column_t> columns_desc;
 
@@ -72,8 +73,8 @@ template <class T> class table {
     FIELD_FUN(double, lorm::SQL_NUMERIC)
     FIELD_FUN(datetime,lorm::SQL_DATETIME)
   
-    static void has_one(const std::string & col, column<int> T::* f) {
-      field(col,f,IDENTITY_NOT_SET);
+    template < class FOREIGN > static void has_one(const std::string & col, reference<FOREIGN> T::* f) {
+      field(col, (column<int> T::*)f );
     }
   
     static void create() {
@@ -119,25 +120,25 @@ template <class T> class table {
               column<int> T::* f=offset_to_columnref<int>((*it).offset);
               (result.*f) = util::from_string<int>((*itd)[(*it).name]);
             }
-              break;
+            break;
             case lorm::SQL_STRING:
             {
               column<std::string> T::* f=offset_to_columnref<std::string>((*it).offset);
               (result.*f) = (*itd)[(*it).name];
             }
-              break;
+            break;
             case lorm::SQL_DATETIME:
             {
               column<datetime> T::* f=offset_to_columnref<datetime>((*it).offset);
               (result.*f) = datetime::datetime((*itd)[(*it).name]);
             }
-              break;
+            break;
             case lorm::SQL_NUMERIC:
             {
               column<double> T::* f=offset_to_columnref<double>((*it).offset);
               (result.*f) = util::from_string<double>((*itd)[(*it).name]);
             }
-              break;
+            break;
             default:
               throw "DB Type not defined"; // TODO
           }
@@ -307,33 +308,6 @@ template <class T> class table {
       return result;
     }
 };
-
-#define SELECT_MACRO_FROM_N(N,FOREIGN_CLASS,...)  CONCATENATE(HAS_ONE_,N)(FOREIGN_CLASS,__VA_ARGS__)
-#define HAS_ONE(FOREIGN_CLASS,...) SELECT_MACRO_FROM_N(COUNT_ARGS(__VA_ARGS__),FOREIGN_CLASS,__VA_ARGS__)
-
-#define HAS_ONE_1(FOREIGN_CLASS,role)  HAS_ONE_2(FOREIGN_CLASS,role,role##_id)
-
-#define HAS_ONE_2(FOREIGN_CLASS,role,roleId)\
-private:\
-  std::tr1::shared_ptr<FOREIGN_CLASS> role##_;\
-public:\
-  column<int> roleId;\
-  FOREIGN_CLASS role (bool force_reload=false) {\
-    if (!role##_.get() || force_reload) {\
-      role##_.reset(new FOREIGN_CLASS());\
-      *role##_=this->load_has_one<FOREIGN_CLASS>(*(roleId.value));\
-    }\
-    return *role##_;\
-  }\
-  void role (const FOREIGN_CLASS &that_role) {\
-    if (IDENTITY_NOT_SET==*(that_role.id.value)) {\
-      throw "Identity not set !!";\
-    }\
-    roleId=that_role.id.value;\
-    FOREIGN_CLASS *p=new FOREIGN_CLASS(that_role);\
-    role##_.reset(p);\
-  }\
-
 
 #define TABLE_INIT(K, ...) \
   K(); \
