@@ -73,10 +73,6 @@ template <class T> class table {
     FIELD_FUN(double, lorm::SQL_NUMERIC)
     FIELD_FUN(datetime,lorm::SQL_DATETIME)
 
-//    static void has_one(const std::string & col, column<int> T::*f ) {
-//      field(col,f);
-//    }
-  
     template <class FOREIGN_CLASS> 
     static void has_one(const std::string & col, reference<FOREIGN_CLASS> T::*f ) {
       field(col,reinterpret_cast<column<int> T::*>(f));
@@ -109,7 +105,7 @@ template <class T> class table {
       return result;
     }
     
-  collection<T> get_selection(std::vector<std::map<std::string, std::string> > data, T t) {
+  collection<T> get_selection(std::vector<std::map<std::string, std::string> > data, const T& t) const {
     collection<T> result_list;
     
     std::vector<std::map<std::string, std::string> >::iterator itd;
@@ -156,15 +152,15 @@ template <class T> class table {
   
   protected:
   
-    template <typename CPPTYPE> column<CPPTYPE> T::* offset_to_columnref(unsigned long offset) {
+    template <typename CPPTYPE> column<CPPTYPE> T::* offset_to_columnref(unsigned long offset) const {
       column<CPPTYPE> T::* g;
       memcpy(&g, &offset, sizeof(unsigned long));
       return g;
     }
   
-    abstract_column& offset_to_column(unsigned long offset) {
-      abstract_column *col;
-      col=reinterpret_cast<abstract_column *>(this+offset); // Arrière, Satan !!
+    const abstract_column& offset_to_column(unsigned long offset) const {
+      const abstract_column *col;
+      col=reinterpret_cast<const abstract_column *>(this+offset); // Arrière, Satan !!
       return *col;
     }
     
@@ -172,7 +168,7 @@ template <class T> class table {
       std::string result;
       columns_desc::iterator it;
       for(it = columns_.begin(); it != columns_.end(); it++) {
-        abstract_column& col=offset_to_column((*it).offset);
+        const abstract_column& col=offset_to_column((*it).offset);
         std::string condition = col.where((*it).name);
         if(!condition.empty()) {
           result += next_keyword + condition;
@@ -186,7 +182,7 @@ template <class T> class table {
       columns_desc::iterator it;
       std::string sep="";
       for(it = columns_.begin(); it != columns_.end(); it++) {
-        abstract_column& col = offset_to_column((*it).offset);
+        const abstract_column& col = offset_to_column((*it).offset);
         if( !col.is_null() ) {
           cols  += sep + (*it).name;
           values += sep + col.as_sql_litteral();
@@ -195,12 +191,12 @@ template <class T> class table {
       }
     }
 
-    std::string column_and_values_for_select() {
+    std::string column_and_values_for_select() const {
       std::string result;
       std::string sep="";
       columns_desc::iterator it;
       for(it = columns_.begin(); it != columns_.end(); it++) {
-        abstract_column& col = offset_to_column( (*it).offset );
+        const abstract_column& col = offset_to_column( (*it).offset );
         std::string condition = col.where((*it).name);
         if( !condition.empty() ) {
           result += sep + condition;
@@ -225,10 +221,10 @@ template <class T> class table {
       return T::search_by_id(id);
     }
 
-    collection<T> find_(T* const t) {
+    collection<T> find_(T* const t) { // OK pour un find_ protégé, mais pourquoi un paramètre t* alors que ce devrait logiquement être "this.find()_" ???
       return find_(*t);
     }
-    collection<T> find_(T t) {
+    collection<T> find_(const T& t) {
       collection<T> result;
       std::stringstream query;
       query << "SELECT * FROM " << T::classname();
@@ -296,6 +292,26 @@ template <class T> class table {
       return t.column_and_values("\t", "\n\t");
     }
 };
+
+#define COLLECTION(FOREIGN_CLASS,role)\
+private:\
+  std::tr1::shared_ptr< collection < FOREIGN_CLASS > > role##_;\
+public:\
+  collection < FOREIGN_CLASS > &role (bool force_reload=false);
+
+#define has_many(THIS_CLASS,FOREIGN_CLASS,role,reverse_role)\
+collection < FOREIGN_CLASS > &THIS_CLASS::role (bool force_reload) {\
+  if (this->id.is_null()) throw "Cannot access roles of an unsaved object";\
+  if (!role##_.get() || force_reload) {\
+    FOREIGN_CLASS reverse_criteria;\
+    reverse_criteria.reverse_role=this->id;\
+    collection< FOREIGN_CLASS > *pCol= new ( collection< FOREIGN_CLASS > );\
+    *pCol=reverse_criteria.find();\
+    role##_.reset(pCol);\
+  }\
+  return *role##_;\
+}
+
 
 #define TABLE_INIT(K, ...) \
   K(); \

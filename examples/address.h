@@ -12,6 +12,7 @@
 
 #include "lorm.h"
 
+class Person;
 class Address : public table<Address> {
 public:
   TABLE_INIT(Address);
@@ -19,6 +20,7 @@ public:
   column<std::string> street;
   column<int> zip;
   column<std::string> city;
+  COLLECTION(Person, residents)
 };
 
 #endif // __PERSON_H

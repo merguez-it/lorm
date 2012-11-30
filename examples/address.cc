@@ -8,6 +8,7 @@
  */
 
 #include "address.h"
+#include "person.h"
 
 REGISTER_TABLE(Address) {
   identity("id", &Address::id); // ID
@@ -16,3 +17,4 @@ REGISTER_TABLE(Address) {
   field("city", &Address::city,false);
 }
 
+has_many(Address,Person,residents,address)

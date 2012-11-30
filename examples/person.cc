@@ -51,33 +51,38 @@ int main() {
     clark.name = "clark";
     clark.desc = "admin";
     clark.birthday = datetime("1955-04-22");
+    clark.address(john_home_saved);
     clark.save();
     std::cout << "INSERT clark ->\n" << clark.to_string() << std::endl;
-    // -- 
-    Person bob_2 = Person::search_by_id(bob.id);
-    std::cout << "Person::search_by_id(" << bob.id << ") ->\n" << bob_2.to_string() << std::endl;
-
+    
     // --
-    Person jupd;
-    jupd.num = 456;
-    jupd.name="johnup";
-    john = john.update(jupd);
-    std::cout << "Update john -> " << john.to_string() << std::endl;
-
-    // --
-
-    Person someone;
-    someone.name = "clark";
-    someone.id < 10;
-    someone.id > 0;
-
-    collection<Person> people = someone.find();
-    std::cout << "Found " << people.size() << " " << someone.name << "(s) : " << std::endl;
-    collection<Person>::iterator it;
-    for(it = people.begin(); it != people.end(); it++) {
-      std::cout << "DELETE " << (*it).name << " #" << (*it).id << std::endl;
-    }
-    people.remove();
+    std::cout << "# Residents at John's home: " << john_home_saved.residents().size() << std::endl;
+    
+//    // -- 
+//    Person bob_2 = Person::search_by_id(bob.id);
+//    std::cout << "Person::search_by_id(" << bob.id << ") ->\n" << bob_2.to_string() << std::endl;
+//
+//    // --
+//    Person jupd;
+//    jupd.num = 456;
+//    jupd.name="johnup";
+//    john = john.update(jupd);
+//    std::cout << "Update john -> " << john.to_string() << std::endl;
+//
+//    // --
+//
+//    Person someone;
+//    someone.name = "clark";
+//    someone.id < 10;
+//    someone.id > 0;
+//
+//    collection<Person> people = someone.find();
+//    std::cout << "Found " << people.size() << " " << someone.name << "(s) : " << std::endl;
+//    collection<Person>::iterator it;
+//    for(it = people.begin(); it != people.end(); it++) {
+//      std::cout << "DELETE " << (*it).name << " #" << (*it).id << std::endl;
+//    }
+//    people.remove();
 
     Person all;
     std::cout << "Delete all: Will remove " << all.count() << " entries"<< std::endl;

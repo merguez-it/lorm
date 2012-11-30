@@ -23,6 +23,11 @@
 template < class FOREIGN_CLASS > 
 class reference : public column<int> {
 public:  
+
+  reference<FOREIGN_CLASS>& operator=(const column<int>& col) {
+    column<int>::operator=(col);
+    return *this;
+  }
   
   bool exists() {
     return value!=NULL;

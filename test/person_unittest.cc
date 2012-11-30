@@ -89,9 +89,9 @@ TEST(Person, tests) {
   someone.id < 10;
   someone.id > 0;
   collection<Person> people = someone.find();
-  ASSERT_EQ(1, people.count());
+  ASSERT_EQ(1U, people.count());
   people.remove();
-  ASSERT_EQ(0, people.count());
+  ASSERT_EQ(0U, people.count());
 
   Person all;
   ASSERT_EQ(2, all.count());
@@ -168,9 +168,9 @@ TEST(Person, Person_has_one_address) {
   someone.id < 10;
   someone.id > 0;
   collection<Person> people = someone.find();
-  ASSERT_EQ(1, people.count());
+  ASSERT_EQ(1U, people.count());
   people.remove();
-  ASSERT_EQ(0, people.count());
+  ASSERT_EQ(0U, people.count());
   
   Person all;
   ASSERT_EQ(2, all.count());
