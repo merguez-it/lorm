@@ -1,18 +1,25 @@
 cmake_minimum_required (VERSION 2.8)
 project(LORM_TESTS)
 
-include(FindGTest)
+include_directories(
+  ${LORM_EXTERN_SOURCE_DIR}/gtest-1.6.0/include
+  ${LORM_SOURCE_DIR}/include
+  )
 
-include_directories(${LORM_SOURCE_DIR}/include ${GTEST_INCLUDE_DIRS})
+set(TESTS_LIBS
+  lorm-static
+  gtest
+  gtest_main
+  )
 
 add_executable(datetime_unittest "datetime_unittest.cc")
-target_link_libraries(datetime_unittest lorm-static ${GTEST_BOTH_LIBRARIES})
+target_link_libraries(datetime_unittest ${TESTS_LIBS})
 add_test(DATETIME_UNITTEST datetime_unittest)
 
 add_executable(person_unittest "person_unittest.cc")
-target_link_libraries(person_unittest lorm-static ${GTEST_BOTH_LIBRARIES})
+target_link_libraries(person_unittest ${TESTS_LIBS})
 add_test(PERSON_UNITTEST person_unittest)
 
 add_executable(to_one_unittest "to_one_unittest.cc")
-target_link_libraries(to_one_unittest lorm-static ${GTEST_BOTH_LIBRARIES})
+target_link_libraries(to_one_unittest ${TESTS_LIBS})
 add_test(TO_ONE_UNITTEST to_one_unittest)

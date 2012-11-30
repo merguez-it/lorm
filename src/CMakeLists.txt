@@ -13,7 +13,6 @@ set(LORM_SOURCES
   column.cc
   )
 
-
 if(HAVE_POSTGRESQL)
   set(LORM_SOURCES 
     ${LORM_SOURCES}

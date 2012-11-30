@@ -1,4 +1,11 @@
 cmake_minimum_required(VERSION 2.8)
+
+# Issue ??? -- TO BE REMOVED
+if(APPLE)
+  set(CMAKE_CXX_COMPILER g++)
+  set(CMAKE_C_COMPILER gcc)
+endif(APPLE)
+
 project(LORM)
 
 set(CMAKE_MODULE_PATH ${LORM_SOURCE_DIR}/cmake ${CMAKE_MODULE_PATH})
@@ -62,5 +69,6 @@ endif()
 
 enable_testing()
 add_subdirectory(src)
+add_subdirectory(ext)
 add_subdirectory(test)
 add_subdirectory(examples)
