@@ -16,9 +16,9 @@ add_executable(datetime_unittest "datetime_unittest.cc")
 target_link_libraries(datetime_unittest ${TESTS_LIBS})
 add_test(DATETIME_UNITTEST datetime_unittest)
 
-add_executable(person_unittest "person_unittest.cc")
-target_link_libraries(person_unittest ${TESTS_LIBS})
-add_test(PERSON_UNITTEST person_unittest)
+add_executable(table_unittest "table_unittest.cc")
+target_link_libraries(table_unittest ${TESTS_LIBS})
+add_test(TABLE_UNITTEST table_unittest)
 
 add_executable(to_one_unittest "to_one_unittest.cc")
 target_link_libraries(to_one_unittest ${TESTS_LIBS})
