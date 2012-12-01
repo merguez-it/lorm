@@ -23,3 +23,7 @@ add_test(PERSON_UNITTEST person_unittest)
 add_executable(to_one_unittest "to_one_unittest.cc")
 target_link_libraries(to_one_unittest ${TESTS_LIBS})
 add_test(TO_ONE_UNITTEST to_one_unittest)
+
+add_executable(many_to_many_unittest "many_to_many_unittest.cc")
+target_link_libraries(many_to_many_unittest ${TESTS_LIBS})
+add_test(MANY_TO_MANY_UNITTEST many_to_many_unittest)
