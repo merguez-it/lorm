@@ -104,3 +104,41 @@ std::vector<std::string> explode(std::string s, std::string e) {
   return ret;
 };
 
+std::pair<std::string, std::string> cut(std::string data, const std::string & sep, cut_keep keep) {
+  std::string first_;
+  std::string second_;
+  int keep_left_ = 0;
+  int keep_right_ = sep.size();
+
+  switch(keep) {
+    case KEEP_LEFT:
+      keep_left_ = sep.size();
+      keep_right_ = sep.size();
+      break;
+    case KEEP_RIGHT:
+      keep_left_ = 0;
+      keep_right_ = 0;
+      break;
+    case KEEP_BOOTH:
+      keep_left_ = sep.size();
+      keep_right_ = 0;
+      break;
+    case KEEP_NONE:
+    default:
+      keep_left_ = 0;
+      keep_right_ = sep.size();
+      break;
+  }
+
+  std::string::iterator pos_ = std::search(data.begin(), data.end(), sep.begin(), sep.end());
+  int dis_ = std::distance(data.begin(), pos_);
+  if(dis_ >= data.size()) {
+    first_ = data;
+    second_ = "";
+  } else {
+    first_ = std::string(data.begin(), data.begin()+dis_+keep_left_);
+    second_ = std::string(data.begin()+dis_+keep_right_, data.end());
+  }
+
+  return std::make_pair(first_, second_);
+}

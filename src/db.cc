@@ -30,8 +30,13 @@ void Lorm::conn(std::string cs) {
 #else
     throw 1; // TODO
 #endif
-    // TODO add pg & mysql
-  }
+  } else if(conn_info[0] == "mysql") { 
+#ifdef HAVE_MYSQL
+    dbi_ = new lorm::mysql(cs);
+#else
+    throw 1; // TODO
+#endif
+  } // TODO ADD PG SUPPORT
 
   connection_string_ = cs;
   is_connected_ = true;
