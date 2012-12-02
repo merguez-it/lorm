@@ -20,16 +20,24 @@ add_executable(datetime_unittest "datetime_unittest.cc")
 target_link_libraries(datetime_unittest ${TESTS_LIBS})
 add_test(DATETIME_UNITTEST datetime_unittest)
 
-add_executable(person_unittest "person_unittest.cc")
-target_link_libraries(person_unittest ${TESTS_LIBS})
-add_test(PERSON_UNITTEST person_unittest)
-
-add_executable(to_one_unittest "to_one_unittest.cc")
-target_link_libraries(to_one_unittest ${TESTS_LIBS})
-add_test(TO_ONE_UNITTEST to_one_unittest)
+add_executable(table_unittest "table_unittest.cc")
+target_link_libraries(table_unittest ${TESTS_LIBS})
+add_test(TABLE_UNITTEST table_unittest)
 
 if(MYSQL_FOUND)
   add_executable(table_mysql_unittest "table_mysql_unittest.cc")
   target_link_libraries(table_mysql_unittest ${TESTS_LIBS})
   add_test(TABLE_MYSQL_UNITTEST table_mysql_unittest)
 endif()
+
+add_executable(one_to_one_unittest "one_to_one_unittest.cc")
+target_link_libraries(one_to_one_unittest ${TESTS_LIBS})
+add_test(ONE_TO_ONE_UNITTEST one_to_one_unittest)
+
+add_executable(one_to_many_unittest "one_to_many_unittest.cc")
+target_link_libraries(one_to_many_unittest ${TESTS_LIBS})
+add_test(ONE_TO_MANY_UNITTEST one_to_many_unittest)
+
+add_executable(many_to_many_unittest "many_to_many_unittest.cc")
+target_link_libraries(many_to_many_unittest ${TESTS_LIBS})
+add_test(MANY_TO_MANY_UNITTEST many_to_many_unittest)
