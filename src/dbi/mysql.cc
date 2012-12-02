@@ -9,10 +9,6 @@ namespace lorm {
   mysql::mysql(std::string cs) : is_open_(false) {
     URI conn = URI::parse(cs);
 
-    std::cout << "MYSQL : " << conn.host() << " : " << conn.port() << " DB: " << std::string(conn.path().begin()+1, conn.path().end()) << std::endl;
-    std::cout << "user = " << conn.query()["username"] << std::endl;
-    std::cout << "pass = " << conn.query()["password"] << std::endl;
-
     db_ = mysql_init(NULL);
     is_open_ = (NULL != mysql_real_connect(
           db_,
@@ -42,9 +38,7 @@ namespace lorm {
   }
 
   long mysql::execute(const std::string &query) {
-    std::cout << query << std::endl;
     if(0 != mysql_query(db_, query.c_str())) {
-      std::cout << mysql_error(db_) << std::endl;
       throw mysql_error(db_);
     }
     return mysql_insert_id(db_);
