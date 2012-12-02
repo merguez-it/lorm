@@ -20,9 +20,13 @@ add_executable(table_unittest "table_unittest.cc")
 target_link_libraries(table_unittest ${TESTS_LIBS})
 add_test(TABLE_UNITTEST table_unittest)
 
-add_executable(to_one_unittest "to_one_unittest.cc")
-target_link_libraries(to_one_unittest ${TESTS_LIBS})
-add_test(TO_ONE_UNITTEST to_one_unittest)
+add_executable(one_to_one_unittest "one_to_one_unittest.cc")
+target_link_libraries(one_to_one_unittest ${TESTS_LIBS})
+add_test(ONE_TO_ONE_UNITTEST one_to_one_unittest)
+
+add_executable(one_to_many_unittest "one_to_many_unittest.cc")
+target_link_libraries(one_to_many_unittest ${TESTS_LIBS})
+add_test(ONE_TO_MANY_UNITTEST one_to_many_unittest)
 
 add_executable(many_to_many_unittest "many_to_many_unittest.cc")
 target_link_libraries(many_to_many_unittest ${TESTS_LIBS})

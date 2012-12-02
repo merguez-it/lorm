@@ -149,7 +149,7 @@ public:
     }
     return result_list;
   }
-  
+ 
 protected:
   
   template <typename CPPTYPE> 
@@ -179,7 +179,7 @@ protected:
     return result;
   }
   
-  void column_and_values_for_insert(/* out */ std::string& cols,/* out */ std::string& values) {
+  void column_and_values_for_insert(/* out */ std::string& cols,/* out */ std::string& values) const {
     columns_desc::iterator it;
     std::string sep="";
     for(it = columns_.begin(); it != columns_.end(); it++) {
@@ -228,7 +228,7 @@ protected:
     return result;
   }
   
-  T save_() {
+  T save_() const {
     std::string cols;
     std::string values;
     std::stringstream query;
@@ -239,7 +239,7 @@ protected:
     return T::search_by_id(id);
   }
   
-  collection<T> find_() {
+  collection<T> find_() const {
     collection<T> result;
     std::stringstream query;
     query << "SELECT * FROM " << T::classname();
@@ -255,7 +255,7 @@ protected:
     return result;
   }
   
-  void remove_() {
+  void remove_() const {
     std::stringstream query;
     query << "DELETE FROM " << T::classname();
     std::string clause_where=column_and_values_for_select();
@@ -266,7 +266,7 @@ protected:
     Lorm::getInstance()->execute(query.str());
   }
   
-  int count_() {
+  int count_() const {
     std::stringstream query;
     query << "SELECT COUNT(*) AS count FROM " << T::classname();
     std::string clause_where=column_and_values_for_select();
@@ -278,11 +278,11 @@ protected:
     return util::from_string<int>(data[0]["count"]);
   }
   
-  T update_(T* const t, const T& u) {
+  T update_(const T* const t, const T& u) const {
     return update_(*t, u);
   }
-  
-  T update_(const T& t, const T& u) { //TODO: virer t pour utiliser plutôt "this", non ?
+    
+  T update_(const T& t, const T& u) const { //TODO: virer t pour utiliser plutôt "this", non ?
     std::stringstream query;
     std::string keyword = " SET ";
     query << "UPDATE " << T::classname();
@@ -294,7 +294,7 @@ protected:
     return T::search_by_id(t.id);
   }
   
-  std::string to_string_() {
+  std::string to_string_() const {
     return column_and_values("\t", "\n\t");
   }
   
@@ -334,12 +334,13 @@ collection < FOREIGN_CLASS > &THIS_CLASS::role (bool force_reload) {\
 #define TABLE_INIT(K, ...) \
   K(); \
   static void register_table();\
-  K save(); \
-  collection<K> find(); \
-  int count(); \
-  K update(K u); \
-  void remove(); \
-  std::string to_string(); \
+  K save() const; \
+  collection<K> find() const; \
+  int count() const; \
+  K update(K u) const; \
+  const K& update() const ; \
+  void remove() const; \
+  std::string to_string() const; \
   static std::string classname() { std::string cname = #__VA_ARGS__; if(cname.empty()) { return pluralize(lower(#K)); } return cname; }
 
 
@@ -347,12 +348,13 @@ collection < FOREIGN_CLASS > &THIS_CLASS::role (bool force_reload) {\
   template <class T> std::vector<lorm::column_t> table<K>::columns_;\
   template <class T> std::string table<K>::identity_col_;\
   K::K() {if (columns_.empty() ) K::register_table(); } \
-  K K::save() { return save_(); } \
-  collection<K> K::find() { return find_(); } \
-  int K::count() { return count_(); } \
-  K K::update(K u) { return update_(this, u); } \
-  void K::remove() { remove_(); } \
-  std::string K::to_string() { return to_string_(); } \
+  K K::save() const { return save_(); } \
+  collection<K> K::find() const { return find_(); } \
+  int K::count() const { return count_(); } \
+  K K::update(K u) const { return update_(this, u); } \
+  const K& K::update() const { K t; t.id=id; K::update_(t,*this); return *this;}\
+  void K::remove() const { remove_(); } \
+  std::string K::to_string() const { return to_string_(); } \
   void K::register_table() 
 
 #undef FIELD_FUN
