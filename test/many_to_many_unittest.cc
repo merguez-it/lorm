@@ -90,11 +90,12 @@ TEST(Many_to_many, retrieve_bidirectional_manies) {
   // people to books
   EXPECT_EQ(1U,Mathias.borrowed_books().size());
   EXPECT_EQ(2U,Greg.borrowed_books().size());
-  EXPECT_EQ(3U,JeanPaul.borrowed_books().size());
+	collection< Book > emprunts_de_JeanPaul;
+	emprunts_de_JeanPaul=JeanPaul.borrowed_books();
+  EXPECT_EQ(3U,emprunts_de_JeanPaul.size());
+	EXPECT_EQ((void *)NULL, emprunts_de_JeanPaul.at(1).title.value);
+	EXPECT_EQ(emprunts_de_JeanPaul[1].title,"effectiveCipleussepleusse");
 
   Lorm::disconnect();
   
 }
-
-
-

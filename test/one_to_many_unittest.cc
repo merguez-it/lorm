@@ -93,6 +93,7 @@ TEST(ONE_TO_MANY, retrieve_unidirectional_manies) {
   EXPECT_EQ(3U,Mathias.personal_library().size());
   EXPECT_EQ(2U,JeanPaul.personal_library().size());
   EXPECT_EQ(1U,Greg.personal_library().size());
+	EXPECT_EQ(Mathias.personal_library()[2].title,"HarryPotter_VI");
 
   Lorm::disconnect();
   

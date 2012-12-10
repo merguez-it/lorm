@@ -16,7 +16,7 @@
 
 #include "reference.h"
 
-#undef DEBUG
+#define DEBUG 1
 
 #ifdef DEBUG 
 #define DEBUG_QUERY(QUERY) std::cout << QUERY.str() << std::endl;
@@ -66,6 +66,8 @@ typedef std::vector<std::map<std::string, std::string> > result_set;
 
 template <class T> class table {
 public: 
+	bool is_loaded() {return is_loaded_;}
+	table<T>() : is_loaded_(false) {};
   static std::string identity_col_;
   static columns_desc columns_;
   ID_FUN(int)
@@ -95,25 +97,24 @@ public:
     query << "SELECT * FROM " << T::classname();
     query << " WHERE " << T::identity_col_ << " = " << id << ";"; 
     DEBUG_QUERY(query)
-	result_set data;
-	Lorm::getInstance()->select(query.str(),data);
+		result_set data;
+		Lorm::getInstance()->select(query.str(),data);
     if(data.size() > 1) {
       throw "Unique id is not unique : "+ id;
     }
     if(data.size() == 1) {
-      result = (result.get_selection(data))[0];
+      result = result.get_selection(data).at(0); // Et surtout pas l'opérateur [], redéfini.
     }
-    
     return result;
   }
   
-  collection<T> get_selection(result_set data) const {
+  collection<T> get_selection(result_set data, bool get_keys_only=false) const {
     collection<T> result_list;
     result_set::iterator itd;
     for(itd = data.begin(); itd != data.end(); itd++) {
       T result;
+			result.is_loaded_=!get_keys_only;
       columns_desc::iterator it;
-      
       for(it = columns_.begin(); it != columns_.end(); it++) {
         if((*itd).count((*it).name) > 0) {
           switch((*it).type) {
@@ -152,6 +153,8 @@ public:
   }
  
 protected:
+	bool is_loaded_; 	// true if this object had all its field formerly loaded. 
+										// false if no Id is set, or if only the Id had been set (case of collections that lazy-load owned instances)
   
   template <typename CPPTYPE> 
   column<CPPTYPE> T::* offset_to_columnref(unsigned long offset) const {
@@ -211,21 +214,19 @@ protected:
   
   template <class FOREIGN_CLASS> 
   collection<FOREIGN_CLASS> join_many_using_table( const std::string &linkTable, 
-                                                  const std::string &linkedSourceKey,
-                                                  const std::string &linkTargetKey,int id)  const {  
+                                                   const std::string &linkSourceKey,
+                                                   const std::string &linkTargetKey,int id)  const {  
     collection<FOREIGN_CLASS> result;
     std::stringstream query;
-    // #define select * from $targetTable inner join $linkTable on $targetTable.$targetKey=$linkTable.$linkTargetKey and $linkTable.$linkedSourceKey=;
-    query << \
-    "SELECT * FROM " << FOREIGN_CLASS::classname() << " INNER JOIN " << linkTable << \
-    " ON " << FOREIGN_CLASS::classname() << "." << FOREIGN_CLASS::identity_col_ << " = " << linkTable << "." << linkTargetKey << \
-    " AND " << linkTable << "." << linkedSourceKey << " = " << id;
-    DEBUG_QUERY(query)
-	result_set data;
-	Lorm::getInstance()->select(query.str(),data);
+    // #define select * from $targetTable inner join $linkTable on $targetTable.$targetKey=$linkTable.$linkTargetKey and $linkTable.$linkedSourceKey=;		
+    query << "SELECT " << linkTable << "." <<   linkTargetKey << " AS " << table<FOREIGN_CLASS>::identity_col_ << " FROM " << linkTable <<
+		         " WHERE " << linkTable << "." << linkSourceKey << " = " << id;
+		DEBUG_QUERY(query)
+		result_set data;
+		Lorm::getInstance()->select(query.str(),data);
     if(data.size() > 0) {
-      FOREIGN_CLASS dum; // TODO: get_selection should be a template sdtatic function
-      result = dum.get_selection(data);
+      FOREIGN_CLASS dum;
+      result = dum.get_selection(data,true); // "true" => Lazy load;
     }
     return result;
   }
@@ -244,16 +245,16 @@ protected:
   collection<T> find_() const {
     collection<T> result;
     std::stringstream query;
-    query << "SELECT * FROM " << T::classname();
+    query << "SELECT "<< identity_col_ << " FROM " << T::classname();
     std::string clause_where=column_and_values_for_select();
     if (!clause_where.empty()) {
       query << " WHERE " << clause_where << ";";
     }
     DEBUG_QUERY(query)
-	result_set data;
-	Lorm::getInstance()->select(query.str(), data );
+		result_set data;
+		Lorm::getInstance()->select(query.str(), data );
     if(data.size() > 0) {
-      result = get_selection(data);
+      result = get_selection(data,true);
     }
     return result;
   }
@@ -277,8 +278,8 @@ protected:
       query << " WHERE " << clause_where << ";";
     }
     DEBUG_QUERY(query)
-	result_set data;
-	Lorm::getInstance()->select(query.str(),data);
+		result_set data;
+		Lorm::getInstance()->select(query.str(),data);
     return util::from_string<int>(data[0]["count"]);
   }
   

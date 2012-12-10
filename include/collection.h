@@ -19,4 +19,12 @@ template <class T> class collection : public std::vector<T> {
     size_t count() {
       return this->size();
     }
+	
+	T& operator[](size_t n) {
+		T& ret=std::vector<T>::operator[](n);
+		if (!(ret.is_loaded())) {
+			ret=T::search_by_id(ret.id);
+		}
+		return ret;
+	}
 };
