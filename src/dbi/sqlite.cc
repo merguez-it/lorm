@@ -72,8 +72,7 @@ namespace lorm {
     execute(query.str());
   }
 
-  std::vector<std::map<std::string, std::string> > sqlite::select(const std::string & query) {
-    std::vector<std::map<std::string, std::string> > data;
+  void sqlite::select(const std::string & query, std::vector<std::map<std::string, std::string> > &data) {
     sqlite3_stmt *stmt;
     int rc = sqlite3_prepare_v2(db_, query.c_str(), -1, &stmt, 0);
     if(rc != SQLITE_OK || !stmt) {
@@ -104,7 +103,5 @@ namespace lorm {
       }
     }
     sqlite3_finalize(stmt);
-
-    return data;
   }
 }

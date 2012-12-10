@@ -16,7 +16,7 @@
 
 #include "reference.h"
 
-#define DEBUG 1
+#undef DEBUG
 
 #ifdef DEBUG 
 #define DEBUG_QUERY(QUERY) std::cout << QUERY.str() << std::endl;
@@ -95,7 +95,8 @@ public:
     query << "SELECT * FROM " << T::classname();
     query << " WHERE " << T::identity_col_ << " = " << id << ";"; 
     DEBUG_QUERY(query)
-    result_set data = Lorm::getInstance()->select(query.str());
+	result_set data;
+	Lorm::getInstance()->select(query.str(),data);
     if(data.size() > 1) {
       throw "Unique id is not unique : "+ id;
     }
@@ -220,7 +221,8 @@ protected:
     " ON " << FOREIGN_CLASS::classname() << "." << FOREIGN_CLASS::identity_col_ << " = " << linkTable << "." << linkTargetKey << \
     " AND " << linkTable << "." << linkedSourceKey << " = " << id;
     DEBUG_QUERY(query)
-    result_set data = Lorm::getInstance()->select(query.str());
+	result_set data;
+	Lorm::getInstance()->select(query.str(),data);
     if(data.size() > 0) {
       FOREIGN_CLASS dum; // TODO: get_selection should be a template sdtatic function
       result = dum.get_selection(data);
@@ -248,7 +250,8 @@ protected:
       query << " WHERE " << clause_where << ";";
     }
     DEBUG_QUERY(query)
-    result_set data = Lorm::getInstance()->select(query.str());
+	result_set data;
+	Lorm::getInstance()->select(query.str(), data );
     if(data.size() > 0) {
       result = get_selection(data);
     }
@@ -274,7 +277,8 @@ protected:
       query << " WHERE " << clause_where << ";";
     }
     DEBUG_QUERY(query)
-    result_set data = Lorm::getInstance()->select(query.str());
+	result_set data;
+	Lorm::getInstance()->select(query.str(),data);
     return util::from_string<int>(data[0]["count"]);
   }
   

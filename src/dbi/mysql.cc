@@ -80,9 +80,7 @@ namespace lorm {
     execute(query.str());
   }
 
-  std::vector<std::map<std::string, std::string> > mysql::select(const std::string & query) {
-    std::vector<std::map<std::string, std::string> > data;
-
+  void mysql::select(const std::string & query, std::vector<std::map<std::string, std::string> > &data ) {
     MYSQL_RES *result;
     MYSQL_ROW row;
     MYSQL_FIELD *field;
@@ -109,7 +107,5 @@ namespace lorm {
       data.push_back(row_);
     }
     mysql_free_result(result);
-
-    return data;
   }
 }

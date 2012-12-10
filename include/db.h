@@ -19,7 +19,7 @@ class Lorm : public Singleton<Lorm> {
 
     long execute(const std::string & query);
     void create_table(const std::string & name, std::vector<lorm::column_t> columns);
-    std::vector<std::map<std::string, std::string> > select(const std::string & query);
+	void select(const std::string & query , std::vector<std::map<std::string, std::string> > &data);
 
   private:
     std::string connection_string_;

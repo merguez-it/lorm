@@ -31,7 +31,7 @@ namespace lorm {
       virtual void close() = 0;
       virtual long execute(const std::string &query) = 0;
       virtual void create_table(const std::string & name, std::vector<column_t> columns) = 0;
-      virtual std::vector<std::map<std::string, std::string> > select(const std::string & query) = 0;
+      virtual void select(const std::string & query, std::vector<std::map<std::string, std::string> > &data ) = 0;
   };
 }
 
