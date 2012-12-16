@@ -19,7 +19,7 @@ namespace util {
     }
     return 0; // O_o ??? a 0 string  is "empty", but what about int, float, or bool ? 
   }
-  template <typename T> inline std::string to_string(T & data) {
+  template <typename T> inline std::string to_string(const T & data) {
     std::ostringstream os;
     os << data;
     return os.str();

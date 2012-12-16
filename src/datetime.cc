@@ -99,12 +99,13 @@ int datetime::sec() const {
   return timeinfo_.tm_sec;
 }
 
-double datetime::interval(datetime dt) {
+double datetime::interval(datetime dt) const {
   return difftime(dt.to_time(), to_time());
 }
 
-time_t datetime::to_time() {
-  return mktime(&timeinfo_);
+time_t datetime::to_time() const {
+	struct tm time_info = timeinfo_;
+  return mktime(&time_info);
 }
 
 std::string datetime::to_sql() const {
@@ -121,19 +122,19 @@ std::string datetime::strftime(std::string format) const {
 }
 
 
-bool datetime::operator==(datetime dt) {
+bool datetime::operator==(datetime dt) const {
   return interval(dt) == 0;
 }
-bool datetime::operator<(datetime dt) {
+bool datetime::operator<(datetime dt) const {
   return interval(dt) > 0; 
 }
-bool datetime::operator>(datetime dt) {
+bool datetime::operator>(datetime dt) const {
   return interval(dt) < 0; 
 }
-bool datetime::operator<=(datetime dt) {
+bool datetime::operator<=(datetime dt) const {
   return interval(dt) >= 0; 
 }
-bool datetime::operator>=(datetime dt) {
+bool datetime::operator>=(datetime dt) const {
   return interval(dt) <= 0; 
 }
 datetime::operator std::string() const {

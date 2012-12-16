@@ -21,17 +21,17 @@ class datetime {
     int min() const;
     int sec() const;
 
-    double interval(datetime dt);
-    time_t to_time();
+    double interval(datetime dt) const;
+    time_t to_time() const;
     std::string to_sql() const;
 
     std::string strftime(std::string format) const;
     
-    bool operator==(datetime dt);
-    bool operator<(datetime dt);
-    bool operator>(datetime dt);
-    bool operator<=(datetime dt);
-    bool operator>=(datetime dt);
+    bool operator==(datetime dt) const;
+    bool operator<(datetime dt) const;
+    bool operator>(datetime dt) const;
+    bool operator<=(datetime dt) const;
+    bool operator>=(datetime dt) const;
     operator std::string() const;
 
     datetime & operator=(const std::string & dt);

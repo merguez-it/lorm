@@ -85,7 +85,7 @@ public:
   }
   
   static T search_by_id(column<int> id) {
-    return search_by_id(*id.value);
+    return search_by_id(id.value());
   }
   
   static T search_by_id(int id) {    
@@ -323,7 +323,7 @@ collection < FOREIGN_CLASS > &THIS_CLASS::role (bool force_reload) {\
   if (this->id.is_null()) throw "Cannot access roles of an unsaved object";\
   if (!role##_.get() || force_reload) {\
     collection< FOREIGN_CLASS > *pCol= new ( collection< FOREIGN_CLASS > );\
-    *pCol=join_many_using_table<FOREIGN_CLASS>(std::string(linkTable), std::string(linkToSource), std::string(linkToTarget),*(this->id.value));\
+    *pCol=join_many_using_table<FOREIGN_CLASS>(std::string(linkTable), std::string(linkToSource), std::string(linkToTarget),this->id.value());\
     role##_.reset(pCol);\
   }\
   return *role##_;\

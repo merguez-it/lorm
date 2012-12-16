@@ -51,14 +51,14 @@ TEST(To_one, create_retrieve_two_relationships) {
   john_home.zip=59000;
   john_home.city="Lille";
   john_home=john_home.save();
-  ASSERT_TRUE(john_home.id.value!=NULL);
+  ASSERT_TRUE(!john_home.id.is_null());
   
   Address john_office;
   john_office.street="21 Rue Camille-Desmoulins";
   john_office.zip=92789;
   john_office.city="Issy-Les-Moulineaux";
   john_office=john_office.save();
-  ASSERT_TRUE(john_office.id.value!=NULL);
+  ASSERT_TRUE(!john_office.id.is_null());
 
   Person john;
   john.name = "john";

@@ -47,16 +47,16 @@ private:
   FOREIGN_CLASS &get_role (bool force_reload=false) {
     if (!role.get() || force_reload) {
       role.reset(new FOREIGN_CLASS());
-      *role=FOREIGN_CLASS::search_by_id(value);
+      *role=FOREIGN_CLASS::search_by_id(value());
     }
     return *role;
   }
   
   void set_role (const FOREIGN_CLASS &that_role) {
-    if (NULL==that_role.id.value) {
+    if (that_role.id.is_null()) {
       throw "Identity not set !!";
     }
-    *(column<int> *)this = *(that_role.id.value);
+    *(column<int> *)this = that_role.id.value();
     FOREIGN_CLASS *p=new FOREIGN_CLASS(that_role);
     role.reset(p);
   }
