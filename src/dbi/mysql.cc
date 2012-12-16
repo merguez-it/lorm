@@ -44,33 +44,33 @@ namespace lorm {
     return mysql_insert_id(db_);
   }
 
-  void mysql::create_table(const std::string & name, std::vector<lorm::column_t> columns) {
+  void mysql::create_table(const std::string & name, columns_desc columns) {
     std::stringstream query;
     query << "CREATE TABLE IF NOT EXISTS " << name << " (";
 
     std::string sep = "";
-    std::vector<lorm::column_t>::iterator it;
+    columns_desc::iterator it;
     for(it = columns.begin(); it != columns.end(); it++) {
-      query << sep << "`" << (*it).name << "` " << types_[(*it).type];
-      if((*it).is_id) {
+      query << sep << "`" << it->first << "` " << types_[it->second.type];
+      if(it->second.is_id) {
         query << " AUTO_INCREMENT PRIMARY KEY";
-      } else if((*it).has_default) {
+      } else if(it->second.has_default) {
         query << " DEFAULT ";
-        switch((*it).type) {
+        switch(it->second.type) {
           case SQL_STRING:
-            query << "'" << any_cast<std::string>((*it).default_value) << "'";
+            query << "'" << any_cast<std::string>(it->second.default_value) << "'";
             break;
           case SQL_DATETIME:
-            query << "'" << any_cast<datetime>((*it).default_value) << "'";
+            query << "'" << any_cast<datetime>(it->second.default_value) << "'";
             break;
           case SQL_INTEGER:
-            query << any_cast<int>((*it).default_value);
+            query << any_cast<int>(it->second.default_value);
             break;
           case SQL_NUMERIC:
-            query << any_cast<double>((*it).default_value);
+            query << any_cast<double>(it->second.default_value);
             break;
         }
-      } else if(!(*it).nullable) {
+      } else if(!it->second.nullable) {
         query << " NOT NULL";
       }
       sep = ", ";
@@ -79,33 +79,70 @@ namespace lorm {
     query << ");";
     execute(query.str());
   }
+	
+	row_iterator mysql::select_start(const std::string & query) {
+		return NULL; //TODO : DO ! 
+	}
+	
+	bool mysql::select_next(row_iterator& row) {
+		return NULL; //TODO : DO ! 
+	};
+	
+	bool mysql::col_is_null(row_iterator row, int iCol) {
+		return true; //TODO : DO ! 
+	};
+	
+	const char *mysql::col_name(row_iterator row, int iCol) {
+		return ""; //TODO : DO !
+	}
 
-  void mysql::select(const std::string & query, std::vector<std::map<std::string, std::string> > &data ) {
-    MYSQL_RES *result;
-    MYSQL_ROW row;
-    MYSQL_FIELD *field;
+	int mysql::col_count(row_iterator row) {
+		return 0; //TODO : DO !
+	}
+	
+	int mysql::get_int_col(row_iterator row, int iCol) {
+		return 0; //TODO : DO !
+	};
+	
+	std::string mysql::get_string_col(row_iterator row, int iCol) {
+		return ""; //TODO : DO !
+	};
+	
+	double mysql::get_double_col(row_iterator row, int iCol) {
+		return 0.0; //TODO : DO !
+	};
+	
+	datetime mysql::get_datetime_col(row_iterator row, int iCol) {
+		return datetime(); //TODO : DO !
+	};
+	
+//  void mysql::select(const std::string & query, collection<T>& data ) {
+//    MYSQL_RES *result;
+//    MYSQL_ROW row;
+//    MYSQL_FIELD *field;
+//
+//    std::vector<std::string> header_;
+//    int num_fields;
+//    int i;
+//
+//    execute(query);
+//    result = mysql_store_result(db_);
+//    num_fields = mysql_num_fields(result);
+//
+//    while(field = mysql_fetch_field(result)) {
+//      header_.push_back(field->name);
+//    }
+//
+//    while ((row = mysql_fetch_row(result))) {
+//      std::map<std::string, std::string> row_;
+//      for(i = 0; i < num_fields; i++) {
+//        if(row[i]) {
+//          row_[header_[i]] = row[i];
+//        }
+//      }
+//      data.push_back(row_);
+//    }
+//    mysql_free_result(result);
+//  }
 
-    std::vector<std::string> header_;
-    int num_fields;
-    int i;
-
-    execute(query);
-    result = mysql_store_result(db_);
-    num_fields = mysql_num_fields(result);
-
-    while(field = mysql_fetch_field(result)) {
-      header_.push_back(field->name);
-    }
-
-    while ((row = mysql_fetch_row(result))) {
-      std::map<std::string, std::string> row_;
-      for(i = 0; i < num_fields; i++) {
-        if(row[i]) {
-          row_[header_[i]] = row[i];
-        }
-      }
-      data.push_back(row_);
-    }
-    mysql_free_result(result);
-  }
 }

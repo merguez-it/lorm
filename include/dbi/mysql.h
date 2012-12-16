@@ -12,9 +12,19 @@ namespace lorm {
       mysql(std::string cs);
       void close();
       long execute(const std::string &query);
-      void create_table(const std::string & name, std::vector<lorm::column_t> columns);
-      void select(const std::string & query, std::vector<std::map<std::string, std::string> >  &data);
+      void create_table(const std::string & name, columns_desc columns);
 
+			row_iterator select_start(const std::string & query);
+			bool select_next(row_iterator& row);
+			int  col_count(row_iterator row);
+			bool col_is_null(row_iterator row, int iCol);
+			const char *col_name(row_iterator row, int iCol);
+		
+			int get_int_col(row_iterator row, int iCol);
+			double get_double_col(row_iterator row, int iCol);
+			datetime get_datetime_col(row_iterator row, int iCol);
+			std::string get_string_col(row_iterator row, int iCol);
+		
     private:
       MYSQL *db_;
       bool is_open_;

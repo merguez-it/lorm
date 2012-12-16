@@ -61,10 +61,7 @@ long Lorm::execute(const std::string & query) {
   return dbi_->execute(query);
 }
 
-void Lorm::create_table(const std::string & name, std::vector<lorm::column_t> columns) {
+void Lorm::create_table(const std::string & name, columns_desc columns) {
   dbi_->create_table(name, columns);
 }
 
-void Lorm::select(const std::string & query , std::vector<std::map<std::string, std::string> > &data) {
-  return dbi_->select(query,data);
-}

@@ -16,7 +16,8 @@
 
 #include "reference.h"
 
-#define DEBUG 1
+//#define DEBUG 1
+#undef DEBUG 
 
 #ifdef DEBUG 
 #define DEBUG_QUERY(QUERY) std::cout << QUERY.str() << std::endl;
@@ -34,7 +35,7 @@ c.name = col; \
 c.nullable = nullable; \
 c.has_default = true; \
 c.default_value = def; \
-columns_.push_back(c); \
+columns_[col]=c; \
 } \
 static void field(const std::string & col, column<CPPTYPE> T::* f, bool nullable = true) { \
 lorm::column_t c; \
@@ -44,7 +45,7 @@ c.type = LORMTYPE; \
 c.name = col; \
 c.nullable = nullable; \
 c.has_default = false; \
-columns_.push_back(c); \
+columns_[col]=c; \
 } 
 
 #define ID_FUN(TYPE) \
@@ -57,12 +58,9 @@ c.type = lorm::SQL_INTEGER; \
 c.name = col; \
 c.nullable = false; \
 c.has_default = false; \
-columns_.push_back(c); \
+columns_[col]=c; \
 } 
 
-
-typedef std::vector<lorm::column_t> columns_desc;
-typedef std::vector<std::map<std::string, std::string> > result_set;
 
 template <class T> class table {
 public: 
@@ -90,76 +88,77 @@ public:
     return search_by_id(*id.value);
   }
   
-  static T search_by_id(int id) {
-    T result;
-    
+  static T search_by_id(int id) {    
     std::stringstream query;
     query << "SELECT * FROM " << T::classname();
     query << " WHERE " << T::identity_col_ << " = " << id << ";"; 
     DEBUG_QUERY(query)
-		result_set data;
-		Lorm::getInstance()->select(query.str(),data);
+		collection<T> data = select(query.str());
     if(data.size() > 1) {
-      throw "Unique id is not unique : "+ id;
+      throw "Unique id is not unique ";
     }
-    if(data.size() == 1) {
-      result = result.get_selection(data).at(0); // Et surtout pas l'opérateur [], redéfini.
+    if(data.size() == 0) {
+      throw T::classname() + " with given unique id does not exist";
     }
-    return result;
+    return data.at(0);
   }
   
-  collection<T> get_selection(result_set data, bool get_keys_only=false) const {
+  static collection<T> select(const std::string& query, bool get_keys_only=false)  {
     collection<T> result_list;
-    result_set::iterator itd;
-    for(itd = data.begin(); itd != data.end(); itd++) {
-      T result;
-			result.is_loaded_=!get_keys_only;
-      columns_desc::iterator it;
-      for(it = columns_.begin(); it != columns_.end(); it++) {
-        if((*itd).count((*it).name) > 0) {
-          switch((*it).type) {
-            case lorm::SQL_INTEGER:
-            {
-              column<int> T::* f=offset_to_columnref<int>((*it).offset);
-              (result.*f) = util::from_string<int>((*itd)[(*it).name]);
-            }
-              break;
-            case lorm::SQL_STRING:
-            {
-              column<std::string> T::* f=offset_to_columnref<std::string>((*it).offset);
-              (result.*f) = (*itd)[(*it).name];
-            }
-              break;
-            case lorm::SQL_DATETIME:
-            {
-              column<datetime> T::* f=offset_to_columnref<datetime>((*it).offset);
-              (result.*f) = datetime::datetime((*itd)[(*it).name]);
-            }
-              break;
-            case lorm::SQL_NUMERIC:
-            {
-              column<double> T::* f=offset_to_columnref<double>((*it).offset);
-              (result.*f) = util::from_string<double>((*itd)[(*it).name]);
-            }
-              break;
-            default:
-              throw "DB Type not defined"; // TODO
-          }
-        }
-      }
-      result_list.push_back(result);
-    }
-    return result_list;
-  }
+		Lorm *db = Lorm::getInstance();
+		row_iterator row=db->select_start(query);
+		if (row) {
+			int n_cols=db->col_count(row);
+			do { 		
+				T result;
+				result.is_loaded_=!get_keys_only;
+				for (int iCol=0; iCol < n_cols; iCol++) {
+					std::string db_col_name = db->col_name(row,iCol);
+					if ( columns_.count(db_col_name) == 1 && !db->col_is_null(row, iCol) ) { // colonne mappée ET non nulle => on la prends
+						lorm::column_t cur_col=columns_.find(db_col_name)->second;
+						switch(cur_col.type) {
+							case lorm::SQL_INTEGER: {
+								column<int> T::* f=offset_to_columnref<int>(cur_col.offset);
+								(result.*f) = db->get_int_col(row, iCol);
+							}
+							break;
+							case lorm::SQL_STRING: {
+								column<std::string> T::* f=offset_to_columnref<std::string>(cur_col.offset);
+								(result.*f) = db->get_string_col(row, iCol);
+							}
+							break;
+							case lorm::SQL_DATETIME: {
+								column<datetime> T::* f=offset_to_columnref<datetime>(cur_col.offset);
+								(result.*f) = db->get_datetime_col(row, iCol);
+							}
+							break;
+							case lorm::SQL_NUMERIC: {
+									column<double> T::* f=offset_to_columnref<double>(cur_col.offset);
+									(result.*f) = db->get_double_col(row, iCol);
+								}
+							break;
+							default:
+								throw "DB Type not defined"; // TODO
+						}
+					}
+				}
+				result_list.push_back(result); // Using pointers could avoid useless copies
+			} while (db->select_next(row));
+		}
+		return result_list;
+	}
  
 protected:
+	
+	friend class lorm::dbi; // Database interface has privileged access to table<T>, for purpose of transfer optimization.
+	
 	bool is_loaded_; 	// true if this object had all its field formerly loaded. 
 										// false if no Id is set, or if only the Id had been set (case of collections that lazy-load owned instances)
   
-  template <typename CPPTYPE> 
-  column<CPPTYPE> T::* offset_to_columnref(unsigned long offset) const {
+	template <typename CPPTYPE> 
+  static column<CPPTYPE> T::* offset_to_columnref(unsigned long offset) {
     column<CPPTYPE> T::* g;
-    memcpy(&g, &offset, sizeof(unsigned long));
+    memcpy(&g, &offset, sizeof(column<CPPTYPE> T::*));
     return g;
   }
   
@@ -173,8 +172,8 @@ protected:
     std::string result;
     columns_desc::iterator it;
     for(it = columns_.begin(); it != columns_.end(); it++) {
-      const abstract_column& col=offset_to_column((*it).offset);
-      std::string condition = col.where((*it).name);
+      const abstract_column& col=offset_to_column(it->second.offset);
+      std::string condition = col.where(it->first);
       if(!condition.empty()) {
         result += next_keyword + condition;
         next_keyword = separator;
@@ -187,9 +186,9 @@ protected:
     columns_desc::iterator it;
     std::string sep="";
     for(it = columns_.begin(); it != columns_.end(); it++) {
-      const abstract_column& col = offset_to_column((*it).offset);
+      const abstract_column& col = offset_to_column(it->second.offset);
       if( !col.is_null() ) {
-        cols  += sep + (*it).name;
+        cols  += sep + it->first;
         values += sep + col.as_sql_litteral();
         sep = ", ";
       }
@@ -201,8 +200,8 @@ protected:
     std::string sep="";
     columns_desc::iterator it;
     for(it = columns_.begin(); it != columns_.end(); it++) {
-      const abstract_column& col = offset_to_column( (*it).offset );
-      std::string condition = col.where((*it).name);
+      const abstract_column& col = offset_to_column( it->second.offset );
+      std::string condition = col.where(it->first);
       if( !condition.empty() ) {
         result += sep + condition;
         sep = " AND ";
@@ -216,19 +215,14 @@ protected:
   collection<FOREIGN_CLASS> join_many_using_table( const std::string &linkTable, 
                                                    const std::string &linkSourceKey,
                                                    const std::string &linkTargetKey,int id)  const {  
-    collection<FOREIGN_CLASS> result;
     std::stringstream query;
-    // #define select * from $targetTable inner join $linkTable on $targetTable.$targetKey=$linkTable.$linkTargetKey and $linkTable.$linkedSourceKey=;		
-    query << "SELECT " << linkTable << "." <<   linkTargetKey << " AS " << table<FOREIGN_CLASS>::identity_col_ << " FROM " << linkTable <<
-		         " WHERE " << linkTable << "." << linkSourceKey << " = " << id;
+//lazy:     query << "SELECT " << linkTable << "." <<   linkTargetKey << " AS " << table<FOREIGN_CLASS>::identity_col_ << " FROM " << linkTable <<
+//		      " WHERE " << linkTable << "." << linkSourceKey << " = " << id;
+		query << "SELECT "<< FOREIGN_CLASS::classname() << ".* FROM " << FOREIGN_CLASS::classname() << " INNER JOIN " << linkTable <<
+						 " ON " << FOREIGN_CLASS::classname() << "." << FOREIGN_CLASS::identity_col_ << " = " << linkTable << "." << linkTargetKey <<
+						 " AND " << linkTable << "." << linkSourceKey << " = " << id;		
 		DEBUG_QUERY(query)
-		result_set data;
-		Lorm::getInstance()->select(query.str(),data);
-    if(data.size() > 0) {
-      FOREIGN_CLASS dum;
-      result = dum.get_selection(data,true); // "true" => Lazy load;
-    }
-    return result;
+		return FOREIGN_CLASS::select(query.str());
   }
   
   T save_() const {
@@ -243,20 +237,14 @@ protected:
   }
   
   collection<T> find_() const {
-    collection<T> result;
     std::stringstream query;
-    query << "SELECT "<< identity_col_ << " FROM " << T::classname();
+    query << "SELECT * FROM " << T::classname();
     std::string clause_where=column_and_values_for_select();
     if (!clause_where.empty()) {
       query << " WHERE " << clause_where << ";";
     }
     DEBUG_QUERY(query)
-		result_set data;
-		Lorm::getInstance()->select(query.str(), data );
-    if(data.size() > 0) {
-      result = get_selection(data,true);
-    }
-    return result;
+		return select(query.str());
   }
   
   void remove_() const {
@@ -271,6 +259,7 @@ protected:
   }
   
   int count_() const {
+		int result = 0;
     std::stringstream query;
     query << "SELECT COUNT(*) AS count FROM " << T::classname();
     std::string clause_where=column_and_values_for_select();
@@ -278,9 +267,13 @@ protected:
       query << " WHERE " << clause_where << ";";
     }
     DEBUG_QUERY(query)
-		result_set data;
-		Lorm::getInstance()->select(query.str(),data);
-    return util::from_string<int>(data[0]["count"]);
+		Lorm *db = Lorm::getInstance();
+		row_iterator row = db->select_start(query.str());
+		if (row) {
+			result =db->get_int_col(row, 0);
+			db->select_next(row); // Finalize the statement...
+		}
+	  return result;
   }
   
   T update_(const T* const t, const T& u) const {
@@ -350,7 +343,7 @@ collection < FOREIGN_CLASS > &THIS_CLASS::role (bool force_reload) {\
 
 
 #define REGISTER_TABLE(K) \
-  template <class T> std::vector<lorm::column_t> table<K>::columns_;\
+  template <class T> std::map<std::string,lorm::column_t> table<K>::columns_;\
   template <class T> std::string table<K>::identity_col_;\
   K::K() {if (columns_.empty() ) K::register_table(); } \
   K K::save() const { return save_(); } \

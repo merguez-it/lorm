@@ -17,7 +17,7 @@ namespace util {
     if(value_of<T>(data, i)) {
       return i;
     }
-    return 0;
+    return 0; // O_o ??? a 0 string  is "empty", but what about int, float, or bool ? 
   }
   template <typename T> inline std::string to_string(T & data) {
     std::ostringstream os;

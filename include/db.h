@@ -5,9 +5,11 @@
 #include "dbi/dbi.h"
 #include <string>
 
-class Lorm : public Singleton<Lorm> {
-  friend class Singleton<Lorm>;
+using namespace lorm;
 
+class Lorm : public Singleton<Lorm> { // Not sure singleton is a good idea => what if one has 2 DBs, or 2 DB interfaces ?
+																			// - "We want a factory", answer the Knights who say "Nee !" 
+  friend class Singleton<Lorm>;
   private:
     Lorm();
     void conn(std::string cs);
@@ -18,9 +20,19 @@ class Lorm : public Singleton<Lorm> {
     static void disconnect();
 
     long execute(const std::string & query);
-    void create_table(const std::string & name, std::vector<lorm::column_t> columns);
-	void select(const std::string & query , std::vector<std::map<std::string, std::string> > &data);
-
+    void create_table(const std::string & name, columns_desc columns);
+	  // select interface
+	  row_iterator select_start(const std::string & query) { return dbi_->select_start(query); }
+		bool select_next(row_iterator& row) { return dbi_->select_next(row); } 
+		int col_count(row_iterator row) { return dbi_->col_count(row); }
+		bool col_is_null(row_iterator row, int iCol) { return dbi_->col_is_null(row,iCol); }
+		const char *col_name (row_iterator row, int iCol) { return dbi_->col_name(row,iCol); }
+	
+		int get_int_col(row_iterator row, int iCol) { return dbi_->get_int_col(row, iCol); }
+		double get_double_col(row_iterator row, int iCol) { return dbi_->get_double_col(row, iCol); }
+		datetime get_datetime_col(row_iterator row, int iCol) { return dbi_->get_datetime_col(row, iCol); }
+		std::string get_string_col(row_iterator row, int iCol) { return dbi_->get_string_col(row, iCol); }
+		
   private:
     std::string connection_string_;
     bool is_connected_;

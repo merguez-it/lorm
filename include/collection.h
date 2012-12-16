@@ -1,3 +1,6 @@
+#ifndef _COLLECTION_T_
+#define _COLLECTION_T_
+
 #include <iostream>
 #include <vector>
 #include <string>
@@ -28,3 +31,5 @@ template <class T> class collection : public std::vector<T> {
 		return ret;
 	}
 };
+
+#endif //_COLLECTION_T_

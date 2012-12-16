@@ -1,4 +1,5 @@
 #include "dbi/sqlite.h"
+#include "table.h"
 #include <vector>
 #include <sstream>
 #include <iostream>
@@ -10,7 +11,8 @@ namespace lorm {
     if(!is_open_) {
       throw 1; // TODO
     }
-
+		void *buf = malloc(1000*32768);
+    sqlite3_db_config(db_,SQLITE_CONFIG_PAGECACHE,buf,32768,1000);
     types_[SQL_STRING] = "TEXT";
     types_[SQL_INTEGER] = "INTEGER";
     types_[SQL_NUMERIC] = "REAL";
@@ -36,33 +38,33 @@ namespace lorm {
     return sqlite3_last_insert_rowid(db_);
   }
 
-  void sqlite::create_table(const std::string & name, std::vector<lorm::column_t> columns) {
+  void sqlite::create_table(const std::string & name, columns_desc columns) {
     std::stringstream query;
     query << "CREATE TABLE IF NOT EXISTS " << name << " (";
 
     std::string sep = "";
-    std::vector<lorm::column_t>::iterator it;
+    columns_desc::iterator it;
     for(it = columns.begin(); it != columns.end(); it++) {
-      query << sep << (*it).name << " " << types_[(*it).type];
-      if((*it).is_id) {
+      query << sep << it->first << " " << types_[it->second.type];
+      if(it->second.is_id) {
         query << " PRIMARY KEY AUTOINCREMENT";
-      } else if((*it).has_default) {
+      } else if(it->second.has_default) {
         query << " DEFAULT ";
-        switch((*it).type) {
+        switch(it->second.type) {
           case SQL_STRING:
-            query << "'" << any_cast<std::string>((*it).default_value) << "'";
+            query << "'" << any_cast<std::string>(it->second.default_value) << "'";
             break;
           case SQL_DATETIME:
-            query << "'" << any_cast<datetime>((*it).default_value) << "'";
+            query << "'" << any_cast<datetime>(it->second.default_value) << "'";
             break;
           case SQL_INTEGER:
-            query << any_cast<int>((*it).default_value);
+            query << any_cast<int>(it->second.default_value);
             break;
           case SQL_NUMERIC:
-            query << any_cast<double>((*it).default_value);
+            query << any_cast<double>(it->second.default_value);
             break;
         }
-      } else if(!(*it).nullable) {
+      } else if(!it->second.nullable) {
         query << " NOT NULL";
       }
       sep = ", ";
@@ -72,36 +74,57 @@ namespace lorm {
     execute(query.str());
   }
 
-  void sqlite::select(const std::string & query, std::vector<std::map<std::string, std::string> > &data) {
-    sqlite3_stmt *stmt;
+	row_iterator sqlite::select_start(const std::string & query)	{
+		sqlite3_stmt *stmt = NULL;
     int rc = sqlite3_prepare_v2(db_, query.c_str(), -1, &stmt, 0);
     if(rc != SQLITE_OK || !stmt) {
-      throw 1; // TODO
+			throw 1;
     }
+		select_next((row_iterator &)stmt);
+		return stmt;
+	}
+						
+	bool sqlite::select_next(row_iterator& row) {
+		sqlite3_stmt *stmt = (sqlite3_stmt *)row;
+		int rc = sqlite3_step(stmt);
+		if (SQLITE_DONE == rc) {
+			sqlite3_finalize(stmt);
+			stmt =NULL;
+		} else if (SQLITE_ROW != rc) {
+			throw 1; // TODO
+		}
+		row=stmt;
+		return row != NULL;
+	};
+	
+	int sqlite::col_count(row_iterator row) {
+		return sqlite3_column_count((sqlite3_stmt *)row);
+	}
+	
+	bool sqlite::col_is_null(row_iterator row, int iCol) {
+		return SQLITE_NULL == sqlite3_column_type((sqlite3_stmt *)row, iCol);
+	};
 
-    int cols = sqlite3_column_count(stmt);
+	const char *sqlite::col_name(row_iterator row, int iCol) {
+	  return sqlite3_column_name((sqlite3_stmt *)row, iCol);
+	}
 
-    while(1) {
-      rc = sqlite3_step(stmt);
-      if(SQLITE_DONE == rc) {
-        break;
-      } else if(SQLITE_ROW == rc) {
-        std::map<std::string, std::string> row;
+	int sqlite::get_int_col(row_iterator row, int iCol) {
+		return sqlite3_column_int( (sqlite3_stmt *)row , iCol );
+	};
+	
+	std::string sqlite::get_string_col(row_iterator row, int iCol) {
+		const unsigned char * s = sqlite3_column_text( (sqlite3_stmt *)row , iCol );
+		return std::string( (const char *) s );
+	};
+	
+	double sqlite::get_double_col(row_iterator row, int iCol) {
+		return sqlite3_column_double((sqlite3_stmt *)row , iCol );
+	};
+	
+	datetime sqlite::get_datetime_col(row_iterator row, int iCol) {
+		const unsigned char * s = sqlite3_column_text((sqlite3_stmt *)row, iCol);
+		return datetime::datetime(std::string((const char *)s ));
+	};
 
-        for(int i = 0; i < cols; i++) {
-          const char *col = sqlite3_column_name(stmt, i);
-          const char *txt = (const char*)sqlite3_column_text(stmt, i);
-
-          if(txt) {
-            row[col] = txt;
-          }
-        }
-
-        data.push_back(row);
-      } else {
-        throw 1; // TODO
-      }
-    }
-    sqlite3_finalize(stmt);
-  }
 }
