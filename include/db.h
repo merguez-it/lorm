@@ -7,6 +7,7 @@
 
 using namespace lorm;
 
+
 class Lorm : public Singleton<Lorm> { // Not sure singleton is a good idea => what if one has 2 DBs, or 2 DB interfaces ?
 																			// - "We want a factory", answer the Knights who say "Nee !" 
   friend class Singleton<Lorm>;
@@ -32,6 +33,7 @@ class Lorm : public Singleton<Lorm> { // Not sure singleton is a good idea => wh
 		double get_double_col(row_iterator row, int iCol) { return dbi_->get_double_col(row, iCol); }
 		datetime get_datetime_col(row_iterator row, int iCol) { return dbi_->get_datetime_col(row, iCol); }
 		std::string get_string_col(row_iterator row, int iCol) { return dbi_->get_string_col(row, iCol); }
+		void execute_with_callback(const std::string &query, void *result_collection, sqlite_callback func) {dbi_->execute_with_callback(query,result_collection,func); };
 		
   private:
     std::string connection_string_;

@@ -17,6 +17,8 @@
 #include "reference.h"
 
 //#define DEBUG 1
+//#define POTATOE_SQLITE 1
+#undef POTATOE_SQLITE
 #undef DEBUG 
 
 #ifdef DEBUG 
@@ -102,9 +104,55 @@ public:
     }
     return data.at(0);
   }
-  
-  static collection<T> select(const std::string& query, bool get_keys_only=false)  {
-    collection<T> result_list;
+	
+#ifdef POTATOE_SQLITE
+	static int callBack(void *collection_as_void, int count, char **values, char **columns)
+	{
+		collection<T> &result_list = (*(collection<T> *)collection_as_void);
+		T result;
+		for (int iCol=0; iCol < count; iCol++) {
+			std::string db_col_name = columns[iCol];
+			if ( columns_.count(db_col_name) == 1 && values[iCol] ) { // colonne mappée ET non nulle => on la prends
+				lorm::column_t cur_col=columns_.find(db_col_name)->second;
+				switch(cur_col.type) {
+					case lorm::SQL_INTEGER: {
+						column<int> T::* f=offset_to_columnref<int>(cur_col.offset);
+						(result.*f) = util::from_string<int>(std::string(values[iCol]));
+					}
+						break;
+					case lorm::SQL_STRING: {
+						column<std::string> T::* f=offset_to_columnref<std::string>(cur_col.offset);
+						(result.*f) = std::string(values[iCol]);
+					}
+						break;
+					case lorm::SQL_DATETIME: {
+						column<datetime> T::* f=offset_to_columnref<datetime>(cur_col.offset);
+						(result.*f) = datetime::datetime(std::string(values[iCol]));
+					}
+						break;
+					case lorm::SQL_NUMERIC: {
+						column<double> T::* f=offset_to_columnref<double>(cur_col.offset);
+						(result.*f) = util::from_string<double>(std::string(values[iCol]));
+					}
+						break;
+					default:
+						throw "DB Type not defined"; // TODO
+				}
+			}
+		}	
+		result_list.push_back(result);
+		return 0;
+	}
+	
+	static collection<T> select(const std::string& query, bool get_keys_only=false)  {
+		collection<T> result_list;
+		Lorm *db = Lorm::getInstance();
+		db->execute_with_callback(query, &result_list, table<T>::callBack);
+		return result_list; // use pointers
+	}
+#else
+	static collection<T> select(const std::string& query, bool get_keys_only=false)  {
+		collection<T> result_list;
 		Lorm *db = Lorm::getInstance();
 		row_iterator row=db->select_start(query);
 		if (row) {
@@ -147,7 +195,7 @@ public:
 		}
 		return result_list;
 	}
- 
+#endif
 protected:
 	
 	friend class lorm::dbi; // Database interface has privileged access to table<T>, for purpose of transfer optimization.
@@ -295,8 +343,6 @@ protected:
   std::string to_string_() const {
     return column_and_values("\t", "\n\t");
   }
-  
-  
 };
 
 #define COLLECTION(FOREIGN_CLASS,role)\

@@ -4,6 +4,7 @@
 #include <sqlite3.h>
 #include "dbi/dbi.h"
 
+
 namespace lorm {
   class sqlite : public lorm::dbi {
 		
@@ -24,6 +25,8 @@ namespace lorm {
 			datetime get_datetime_col(row_iterator row, int iCol);
 			std::string get_string_col(row_iterator row, int iCol);
 		
+			void execute_with_callback(const std::string &query, void *result_collection, sqlite_callback func);
+
     private:
       sqlite3 *db_;
       bool is_open_;

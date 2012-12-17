@@ -32,6 +32,8 @@ namespace lorm {
 	typedef void* row_iterator; // Opaque row cursor on db
 	typedef std::map<std::string, lorm::column_t> columns_desc;
 
+	typedef int (*sqlite_callback)(void*,int,char**,char**); // TEST TEST TEST
+
 	class dbi {
     public:
       virtual void close() = 0;
@@ -48,6 +50,8 @@ namespace lorm {
 			virtual double get_double_col(row_iterator row, int iCol) = 0;
 			virtual datetime get_datetime_col(row_iterator row, int iCol) = 0;
 			virtual std::string get_string_col(row_iterator row, int iCol) = 0;
+		
+			virtual void execute_with_callback(const std::string &query, void *result_collection, sqlite_callback func) = 0;
   };
 }
 

@@ -24,7 +24,7 @@ namespace lorm {
 			double get_double_col(row_iterator row, int iCol);
 			datetime get_datetime_col(row_iterator row, int iCol);
 			std::string get_string_col(row_iterator row, int iCol);
-		
+			void execute_with_callback(const std::string &query, void *result_collection, sqlite_callback func) {}; //TO NOT DO !
     private:
       MYSQL *db_;
       bool is_open_;

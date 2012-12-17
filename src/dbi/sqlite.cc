@@ -126,5 +126,12 @@ namespace lorm {
 		const unsigned char * s = sqlite3_column_text((sqlite3_stmt *)row, iCol);
 		return datetime::datetime(std::string((const char *)s ));
 	};
+	
+	void sqlite::execute_with_callback(const std::string &query, void *result_collection, sqlite_callback func) {
+    char *err; 
+    if(SQLITE_OK != sqlite3_exec(db_, query.c_str(), func, result_collection,&err)) {
+      throw err; // TODO
+    }
+	}
 
 }

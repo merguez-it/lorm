@@ -4,15 +4,15 @@
 #include <sstream>
 
 namespace util {
-  template <typename T> inline bool value_of(std::string & data, T & obj) {
+  template <typename T> inline bool value_of(const std::string & data, T & obj) {
     std::istringstream is(data);
     return (is >> obj).eof();
   }
-  template <typename T> inline bool value_of(std::string & data, std::string & obj) {
+  template <typename T> inline bool value_of(const std::string & data, std::string & obj) {
     obj = data;
     return true;
   }
-  template <typename T> inline T from_string(std::string & data) {
+  template <typename T> inline T from_string(const std::string & data) {
     T i;
     if(value_of<T>(data, i)) {
       return i;
