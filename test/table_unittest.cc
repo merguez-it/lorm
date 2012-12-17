@@ -88,11 +88,11 @@ TEST(Person, tests) {
   someone.name = "clark";
   someone.id < 10;
   someone.id > 0;
-  collection<Person> people = someone.find();
-  ASSERT_EQ(1U, people.count());
-  people.remove();
-  ASSERT_EQ(0U, people.count());
-
+  collection<Person> *people = someone.find();
+  ASSERT_EQ(1U, people->count());
+  people->remove();
+  ASSERT_EQ(0U, people->count());
+	delete people; // hum, sounds a bit like a slaughter...
   Person all;
   ASSERT_EQ(2, all.count());
   all.remove();

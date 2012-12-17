@@ -17,9 +17,7 @@
 #include "reference.h"
 
 //#define DEBUG 1
-//#define POTATOE_SQLITE 1
-#undef POTATOE_SQLITE
-#undef DEBUG 
+#define POTATOE_SQLITE 1
 
 #ifdef DEBUG 
 #define DEBUG_QUERY(QUERY) std::cout << QUERY.str() << std::endl;
@@ -95,14 +93,16 @@ public:
     query << "SELECT * FROM " << T::classname();
     query << " WHERE " << T::identity_col_ << " = " << id << ";"; 
     DEBUG_QUERY(query)
-		collection<T> data = select(query.str());
-    if(data.size() > 1) {
+		collection<T> *data = select(query.str());
+    if(data->size() > 1) {
       throw "Unique id is not unique ";
     }
-    if(data.size() == 0) {
+    if(data->size() == 0) {
       throw T::classname() + " with given unique id does not exist";
     }
-    return data.at(0);
+		T result = data->at(0);
+		delete data;
+    return result;
   }
 	
 #ifdef POTATOE_SQLITE
@@ -110,6 +110,8 @@ public:
 	{
 		collection<T> &result_list = (*(collection<T> *)collection_as_void);
 		T result;
+		int iResult=result_list.size();
+		result_list.push_back(result);
 		for (int iCol=0; iCol < count; iCol++) {
 			std::string db_col_name = columns[iCol];
 			if ( columns_.count(db_col_name) == 1 && values[iCol] ) { // colonne mappée ET non nulle => on la prends
@@ -117,22 +119,22 @@ public:
 				switch(cur_col.type) {
 					case lorm::SQL_INTEGER: {
 						column<int> T::* f=offset_to_columnref<int>(cur_col.offset);
-						(result.*f) = util::from_string<int>(std::string(values[iCol]));
+						result_list.at(iResult).*f = util::from_string<int>(std::string(values[iCol]));
 					}
 						break;
 					case lorm::SQL_STRING: {
 						column<std::string> T::* f=offset_to_columnref<std::string>(cur_col.offset);
-						(result.*f) = std::string(values[iCol]);
+						result_list.at(iResult).*f = std::string(values[iCol]);
 					}
 						break;
 					case lorm::SQL_DATETIME: {
 						column<datetime> T::* f=offset_to_columnref<datetime>(cur_col.offset);
-						(result.*f) = datetime::datetime(std::string(values[iCol]));
+						result_list.at(iResult).*f = datetime::datetime(std::string(values[iCol]));
 					}
 						break;
 					case lorm::SQL_NUMERIC: {
 						column<double> T::* f=offset_to_columnref<double>(cur_col.offset);
-						(result.*f) = util::from_string<double>(std::string(values[iCol]));
+						result_list.at(iResult).*f = util::from_string<double>(std::string(values[iCol]));
 					}
 						break;
 					default:
@@ -140,15 +142,14 @@ public:
 				}
 			}
 		}	
-		result_list.push_back(result);
 		return 0;
 	}
 	
-	static collection<T> select(const std::string& query, bool get_keys_only=false)  {
-		collection<T> result_list;
+	static collection<T> *select(const std::string& query, bool get_keys_only=false)  {
+		collection<T> *result_list = new collection<T>;
 		Lorm *db = Lorm::getInstance();
-		db->execute_with_callback(query, &result_list, table<T>::callBack);
-		return result_list; // use pointers
+		db->execute_with_callback(query, result_list, table<T>::callBack);
+		return result_list;
 	}
 #else
 	static collection<T> select(const std::string& query, bool get_keys_only=false)  {
@@ -260,7 +261,7 @@ protected:
   
   
   template <class FOREIGN_CLASS> 
-  collection<FOREIGN_CLASS> join_many_using_table( const std::string &linkTable, 
+  collection<FOREIGN_CLASS> * join_many_using_table( const std::string &linkTable, 
                                                    const std::string &linkSourceKey,
                                                    const std::string &linkTargetKey,int id)  const {  
     std::stringstream query;
@@ -284,7 +285,7 @@ protected:
     return T::search_by_id(id);
   }
   
-  collection<T> find_() const {
+  collection<T> *find_() const {
     std::stringstream query;
     query << "SELECT * FROM " << T::classname();
     std::string clause_where=column_and_values_for_select();
@@ -357,8 +358,7 @@ collection < FOREIGN_CLASS > &THIS_CLASS::role (bool force_reload) {\
   if (!role##_.get() || force_reload) {\
     FOREIGN_CLASS reverse_criteria;\
     reverse_criteria.reverse_role=this->id;\
-    collection< FOREIGN_CLASS > *pCol= new ( collection< FOREIGN_CLASS > );\
-    *pCol=reverse_criteria.find();\
+    collection < FOREIGN_CLASS > *pCol=reverse_criteria.find();\
     role##_.reset(pCol);\
   }\
   return *role##_;\
@@ -368,8 +368,7 @@ collection < FOREIGN_CLASS > &THIS_CLASS::role (bool force_reload) {\
 collection < FOREIGN_CLASS > &THIS_CLASS::role (bool force_reload) {\
   if (this->id.is_null()) throw "Cannot access roles of an unsaved object";\
   if (!role##_.get() || force_reload) {\
-    collection< FOREIGN_CLASS > *pCol= new ( collection< FOREIGN_CLASS > );\
-    *pCol=join_many_using_table<FOREIGN_CLASS>(std::string(linkTable), std::string(linkToSource), std::string(linkToTarget),this->id.value());\
+    collection < FOREIGN_CLASS > *pCol=join_many_using_table<FOREIGN_CLASS>(std::string(linkTable), std::string(linkToSource), std::string(linkToTarget),this->id.value());\
     role##_.reset(pCol);\
   }\
   return *role##_;\
@@ -379,7 +378,7 @@ collection < FOREIGN_CLASS > &THIS_CLASS::role (bool force_reload) {\
   K(); \
   static void register_table();\
   K save() const; \
-  collection<K> find() const; \
+  collection<K> *find() const; \
   int count() const; \
   K update(K u) const; \
   const K& update() const ; \
@@ -393,7 +392,7 @@ collection < FOREIGN_CLASS > &THIS_CLASS::role (bool force_reload) {\
   template <class T> std::string table<K>::identity_col_;\
   K::K() {if (columns_.empty() ) K::register_table(); } \
   K K::save() const { return save_(); } \
-  collection<K> K::find() const { return find_(); } \
+  collection<K> *K::find() const { return find_(); } \
   int K::count() const { return count_(); } \
   K K::update(K u) const { return update_(this, u); } \
   const K& K::update() const { K t; t.id=id; K::update_(t,*this); return *this;}\
