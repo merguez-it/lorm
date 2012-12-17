@@ -17,7 +17,7 @@
 #include "reference.h"
 
 //#define DEBUG 1
-#define POTATOE_SQLITE 1
+//#define POTATOE_SQLITE 1
 
 #ifdef DEBUG 
 #define DEBUG_QUERY(QUERY) std::cout << QUERY.str() << std::endl;
@@ -152,8 +152,8 @@ public:
 		return result_list;
 	}
 #else
-	static collection<T> select(const std::string& query, bool get_keys_only=false)  {
-		collection<T> result_list;
+	static collection<T> *select(const std::string& query, bool get_keys_only=false)  {
+		collection<T> *result_list = new collection<T>;
 		Lorm *db = Lorm::getInstance();
 		row_iterator row=db->select_start(query);
 		if (row) {
@@ -191,7 +191,7 @@ public:
 						}
 					}
 				}
-				result_list.push_back(result); // Using pointers could avoid useless copies
+				result_list->push_back(result); // Using pointers could avoid useless copies
 			} while (db->select_next(row));
 		}
 		return result_list;
