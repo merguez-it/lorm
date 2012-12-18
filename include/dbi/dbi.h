@@ -36,22 +36,24 @@ namespace lorm {
 
 	class dbi {
     public:
-      virtual void close() = 0;
-      virtual long execute(const std::string &query) = 0;
-      virtual void create_table(const std::string & name, columns_desc columns) = 0;
+		virtual void close() = 0;
+		virtual long execute(const std::string &query) = 0;
+		virtual void create_table(const std::string & name, columns_desc columns) = 0;
 		
-      virtual row_iterator select_start(const std::string & query) = 0; // immediately returns null if no results.
-			virtual bool select_next(row_iterator &row /* in & out */) = 0; // Also does the clean-up when it returns false
-			virtual int col_count(row_iterator row) = 0;
-		  virtual bool col_is_null(row_iterator row, int iCol) = 0;
-			virtual const char *col_name(row_iterator row, int iCol) = 0;		
+		virtual row_iterator select_start(const std::string & query) = 0;
+		virtual bool select_next(row_iterator &row /* in & out */) = 0;
+		virtual void select_end(row_iterator row) = 0;
 		
-			virtual int get_int_col(row_iterator row, int iCol) = 0;
-			virtual double get_double_col(row_iterator row, int iCol) = 0;
-			virtual datetime get_datetime_col(row_iterator row, int iCol) = 0;
-			virtual std::string get_string_col(row_iterator row, int iCol) = 0;
+		virtual int col_count(row_iterator row) = 0;
+		virtual bool col_is_null(row_iterator row, int iCol) = 0;
+		virtual const char *col_name(row_iterator row, int iCol) = 0;		
 		
-			virtual void execute_with_callback(const std::string &query, void *result_collection, sqlite_callback func) = 0;
+		virtual int get_int_col(row_iterator row, int iCol) = 0;
+		virtual double get_double_col(row_iterator row, int iCol) = 0;
+		virtual datetime get_datetime_col(row_iterator row, int iCol) = 0;
+		virtual std::string get_string_col(row_iterator row, int iCol) = 0;
+		
+		virtual void execute_with_callback(const std::string &query, void *result_collection, sqlite_callback func) = 0;
   };
 }
 

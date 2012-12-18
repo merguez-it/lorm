@@ -156,43 +156,41 @@ public:
 		collection<T> *result_list = new collection<T>;
 		Lorm *db = Lorm::getInstance();
 		row_iterator row=db->select_start(query);
-		if (row) {
+		while (db->select_next(row)) {
 			int n_cols=db->col_count(row);
-			do { 		
-				T result;
-				result.is_loaded_=!get_keys_only;
-				for (int iCol=0; iCol < n_cols; iCol++) {
-					std::string db_col_name = db->col_name(row,iCol);
-					if ( columns_.count(db_col_name) == 1 && !db->col_is_null(row, iCol) ) { // colonne mappée ET non nulle => on la prends
-						lorm::column_t cur_col=columns_.find(db_col_name)->second;
-						switch(cur_col.type) {
-							case lorm::SQL_INTEGER: {
-								column<int> T::* f=offset_to_columnref<int>(cur_col.offset);
-								(result.*f) = db->get_int_col(row, iCol);
-							}
-							break;
-							case lorm::SQL_STRING: {
-								column<std::string> T::* f=offset_to_columnref<std::string>(cur_col.offset);
-								(result.*f) = db->get_string_col(row, iCol);
-							}
-							break;
-							case lorm::SQL_DATETIME: {
-								column<datetime> T::* f=offset_to_columnref<datetime>(cur_col.offset);
-								(result.*f) = db->get_datetime_col(row, iCol);
-							}
-							break;
-							case lorm::SQL_NUMERIC: {
-									column<double> T::* f=offset_to_columnref<double>(cur_col.offset);
-									(result.*f) = db->get_double_col(row, iCol);
-								}
-							break;
-							default:
-								throw "DB Type not defined"; // TODO
+			T result;
+			result.is_loaded_=!get_keys_only;
+			for (int iCol=0; iCol < n_cols; iCol++) {
+				std::string db_col_name = db->col_name(row,iCol);
+				if ( columns_.count(db_col_name) == 1 && !db->col_is_null(row, iCol) ) { // colonne mappée ET non nulle => on la prends
+					lorm::column_t cur_col=columns_.find(db_col_name)->second;
+					switch(cur_col.type) {
+						case lorm::SQL_INTEGER: {
+							column<int> T::* f=offset_to_columnref<int>(cur_col.offset);
+							(result.*f) = db->get_int_col(row, iCol);
 						}
+							break;
+						case lorm::SQL_STRING: {
+							column<std::string> T::* f=offset_to_columnref<std::string>(cur_col.offset);
+							(result.*f) = db->get_string_col(row, iCol);
+						}
+							break;
+						case lorm::SQL_DATETIME: {
+							column<datetime> T::* f=offset_to_columnref<datetime>(cur_col.offset);
+							(result.*f) = db->get_datetime_col(row, iCol);
+						}
+							break;
+						case lorm::SQL_NUMERIC: {
+							column<double> T::* f=offset_to_columnref<double>(cur_col.offset);
+							(result.*f) = db->get_double_col(row, iCol);
+						}
+							break;
+						default:
+							throw "DB Type not defined"; // TODO
 					}
 				}
-				result_list->push_back(result); // Using pointers could avoid useless copies
-			} while (db->select_next(row));
+			}
+			result_list->push_back(result); // Using pointers could avoid useless copies
 		}
 		return result_list;
 	}
@@ -318,10 +316,9 @@ protected:
     DEBUG_QUERY(query)
 		Lorm *db = Lorm::getInstance();
 		row_iterator row = db->select_start(query.str());
-		if (row) {
-			result =db->get_int_col(row, 0);
-			db->select_next(row); // Finalize the statement...
-		}
+		db->select_next(row); // get the "row".
+		result =db->get_int_col(row, 0); // get the count in the "row".
+		db->select_end(row);
 	  return result;
   }
   

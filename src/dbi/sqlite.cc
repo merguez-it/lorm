@@ -11,8 +11,6 @@ namespace lorm {
     if(!is_open_) {
       throw 1; // TODO
     }
-		void *buf = malloc(1000*32768);
-    sqlite3_db_config(db_,SQLITE_CONFIG_PAGECACHE,buf,32768,1000);
     types_[SQL_STRING] = "TEXT";
     types_[SQL_INTEGER] = "INTEGER";
     types_[SQL_NUMERIC] = "REAL";
@@ -73,14 +71,14 @@ namespace lorm {
     query << ");";
     execute(query.str());
   }
-
+	
+//SELECT interface subset
 	row_iterator sqlite::select_start(const std::string & query)	{
 		sqlite3_stmt *stmt = NULL;
     int rc = sqlite3_prepare_v2(db_, query.c_str(), -1, &stmt, 0);
     if(rc != SQLITE_OK || !stmt) {
-			throw 1;
+			throw 1; //TODO
     }
-		select_next((row_iterator &)stmt);
 		return stmt;
 	}
 						
@@ -96,6 +94,12 @@ namespace lorm {
 		row=stmt;
 		return row != NULL;
 	};
+	
+	void sqlite::select_end(row_iterator row)  {
+		sqlite3_stmt *stmt = (sqlite3_stmt *)row;
+		sqlite3_finalize(stmt); // 	Harmless on a null pointer => safe (even if useless) to be called ,
+														//	even after "select_next" has nullified the statement;
+	}
 	
 	int sqlite::col_count(row_iterator row) {
 		return sqlite3_column_count((sqlite3_stmt *)row);
@@ -123,8 +127,8 @@ namespace lorm {
 	};
 	
 	datetime sqlite::get_datetime_col(row_iterator row, int iCol) {
-		const unsigned char * s = sqlite3_column_text((sqlite3_stmt *)row, iCol);
-		return datetime::datetime(std::string((const char *)s ));
+		const char * s = (const char *)sqlite3_column_text((sqlite3_stmt *)row, iCol);
+		return datetime(s);
 	};
 	
 	void sqlite::execute_with_callback(const std::string &query, void *result_collection, sqlite_callback func) {

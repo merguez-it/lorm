@@ -7,7 +7,7 @@
 
 template <class T> class collection : public std::vector<T> {
   public:
-    collection() : std::vector<T>() {}
+	collection() : std::vector<T>() {}
     collection(int size) : std::vector<T>(size) {}
     template <class I>collection(I first, I last) : std::vector<T>(first, last) {}
     

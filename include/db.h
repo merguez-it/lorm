@@ -25,6 +25,7 @@ class Lorm : public Singleton<Lorm> { // Not sure singleton is a good idea => wh
 	  // select interface
 	  row_iterator select_start(const std::string & query) { return dbi_->select_start(query); }
 		bool select_next(row_iterator& row) { return dbi_->select_next(row); } 
+		void select_end(row_iterator row) {  dbi_->select_end(row); } 
 		int col_count(row_iterator row) { return dbi_->col_count(row); }
 		bool col_is_null(row_iterator row, int iCol) { return dbi_->col_is_null(row,iCol); }
 		const char *col_name (row_iterator row, int iCol) { return dbi_->col_name(row,iCol); }

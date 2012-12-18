@@ -1,8 +1,10 @@
 #include "dbi/mysql.h"
 #include "uri.h"
+#include "types.h"
 #include <vector>
 #include <sstream>
 #include <iostream>
+#include <assert.h>
 
 namespace lorm {
   // mysql://host:port/database?username=<user>&password=<password>:q
@@ -80,69 +82,85 @@ namespace lorm {
     execute(query.str());
   }
 	
+	// "Select" abstract interface for mySQL
+	
+	struct mysql_raw_iterator {
+		mysql_raw_iterator() : mysql_result(NULL), mysql_row(NULL) {};
+		bool initialized() {return mysql_result!=NULL;}
+		bool fetchable() {return initialized() && mysql_row !=NULL;}
+		MYSQL_RES *mysql_result;
+	  MYSQL_ROW mysql_row;
+	};
+	
 	row_iterator mysql::select_start(const std::string & query) {
-		return NULL; //TODO : DO ! 
+		if(0 != mysql_query(db_, query.c_str())) {
+      throw mysql_error(db_);
+    }
+		MYSQL_RES *mysql_result =  mysql_use_result(db_);
+		mysql_raw_iterator *dbi_result = new mysql_raw_iterator();
+		dbi_result->mysql_result = mysql_result ;
+		return (row_iterator)(dbi_result);
 	}
 	
 	bool mysql::select_next(row_iterator& row) {
-		return NULL; //TODO : DO ! 
+		mysql_raw_iterator *mysql_it =  (mysql_raw_iterator *)row;
+		assert(mysql_it && mysql_it->initialized());
+		MYSQL_ROW mysql_row = mysql_fetch_row(mysql_it->mysql_result);
+		if (mysql_row) {
+			mysql_it->mysql_row = mysql_row;
+		} else if (!std::string(mysql_error(db_)).empty()) {
+			throw mysql_error(db_); // TODO: Exception + catchable
+		}
+		return mysql_row != NULL;
+	}
+	
+	void mysql::select_end(row_iterator row)  {
+		mysql_raw_iterator *mysql_it =  (mysql_raw_iterator *)row;
+		assert(mysql_it && mysql_it->initialized());
+		mysql_free_result(mysql_it->mysql_result);
 	};
 	
 	bool mysql::col_is_null(row_iterator row, int iCol) {
-		return true; //TODO : DO ! 
+		mysql_raw_iterator *mysql_it =  (mysql_raw_iterator *)row;
+		assert(mysql_it && mysql_it->fetchable());
+		return mysql_it->mysql_row[iCol] == NULL;
 	};
 	
 	const char *mysql::col_name(row_iterator row, int iCol) {
-		return ""; //TODO : DO !
+		mysql_raw_iterator *mysql_it =  (mysql_raw_iterator *)row;
+		assert(mysql_it && mysql_it->initialized());
+		const char *fieldname =mysql_fetch_field_direct(mysql_it->mysql_result,iCol)->name;
+		assert(fieldname);
+		return fieldname;
 	}
 
 	int mysql::col_count(row_iterator row) {
-		return 0; //TODO : DO !
+		mysql_raw_iterator *mysql_it =  (mysql_raw_iterator *)row;
+		assert(mysql_it && mysql_it->fetchable());
+		return mysql_num_fields(mysql_it->mysql_result) ;
 	}
 	
 	int mysql::get_int_col(row_iterator row, int iCol) {
-		return 0; //TODO : DO !
+		mysql_raw_iterator *mysql_it =  (mysql_raw_iterator *)row;
+		assert(mysql_it && mysql_it->fetchable() && mysql_it->mysql_row[iCol]!=NULL);
+		return util::from_string<int>(mysql_it->mysql_row[iCol]);
 	};
 	
 	std::string mysql::get_string_col(row_iterator row, int iCol) {
-		return ""; //TODO : DO !
+		mysql_raw_iterator *mysql_it =  (mysql_raw_iterator *)row;
+		assert(mysql_it && mysql_it->fetchable() && mysql_it->mysql_row[iCol]!=NULL);
+		return mysql_it->mysql_row[iCol];
 	};
 	
 	double mysql::get_double_col(row_iterator row, int iCol) {
-		return 0.0; //TODO : DO !
+		mysql_raw_iterator *mysql_it =  (mysql_raw_iterator *)row;
+		assert(mysql_it && mysql_it->fetchable() && mysql_it->mysql_row[iCol]!=NULL);
+		return util::from_string<double>(mysql_it->mysql_row[iCol]);
 	};
 	
 	datetime mysql::get_datetime_col(row_iterator row, int iCol) {
-		return datetime(); //TODO : DO !
+		mysql_raw_iterator *mysql_it =  (mysql_raw_iterator *)row;
+		assert(mysql_it && mysql_it->fetchable() && mysql_it->mysql_row[iCol]!=NULL);
+		return datetime(mysql_it->mysql_row[iCol]);
 	};
-	
-//  void mysql::select(const std::string & query, collection<T>& data ) {
-//    MYSQL_RES *result;
-//    MYSQL_ROW row;
-//    MYSQL_FIELD *field;
-//
-//    std::vector<std::string> header_;
-//    int num_fields;
-//    int i;
-//
-//    execute(query);
-//    result = mysql_store_result(db_);
-//    num_fields = mysql_num_fields(result);
-//
-//    while(field = mysql_fetch_field(result)) {
-//      header_.push_back(field->name);
-//    }
-//
-//    while ((row = mysql_fetch_row(result))) {
-//      std::map<std::string, std::string> row_;
-//      for(i = 0; i < num_fields; i++) {
-//        if(row[i]) {
-//          row_[header_[i]] = row[i];
-//        }
-//      }
-//      data.push_back(row_);
-//    }
-//    mysql_free_result(result);
-//  }
-
 }

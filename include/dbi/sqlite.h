@@ -16,6 +16,8 @@ namespace lorm {
 		
 			row_iterator select_start(const std::string & query);
 			bool select_next(row_iterator& row);
+		  void select_end(row_iterator row);
+
 			int col_count(row_iterator row);
 			bool col_is_null(row_iterator row, int iCol);
 			const char *col_name(row_iterator row, int iCol);

@@ -25,6 +25,11 @@ REGISTER_TABLE(Person) {
 
 TEST(MySQL, tests) {
   Lorm::connect("mysql://localhost/tests?username=root&password=");
+	Lorm::getInstance()->execute("DROP TABLE IF EXISTS people");
+	
+	Person should_fail;
+	EXPECT_ANY_THROW(should_fail.save());
+
   Person::create();
 
   // -- 
@@ -32,11 +37,11 @@ TEST(MySQL, tests) {
   bob.name = "bob";
   bob = bob.save();
 
-  ASSERT_TRUE(bob.name == "bob");
-  ASSERT_TRUE(bob.description == "guest");
-  ASSERT_TRUE(bob.num == 123);
-  ASSERT_TRUE(bob.age == 1.2);
-  ASSERT_TRUE(bob.birthday == datetime("1967-06-26 00:00:00"));
+  EXPECT_TRUE(bob.name == "bob");
+  EXPECT_TRUE(bob.description == "guest");
+  EXPECT_TRUE(bob.num == 123);
+  EXPECT_TRUE(bob.age == 1.2);
+  EXPECT_TRUE(bob.birthday == datetime("1967-06-26 00:00:00"));
 
   // -- 
   Person john;
@@ -47,11 +52,11 @@ TEST(MySQL, tests) {
   john.birthday = dt;
   john = john.save();
 
-  ASSERT_TRUE(john.name == "john");
-  ASSERT_TRUE(john.description == "guest");
-  ASSERT_TRUE(john.num == 666);
-  ASSERT_TRUE(john.age == 18.6);
-  ASSERT_TRUE(john.birthday == dt);
+  EXPECT_TRUE(john.name == "john");
+  EXPECT_TRUE(john.description == "guest");
+  EXPECT_TRUE(john.num == 666);
+  EXPECT_TRUE(john.age == 18.6);
+  EXPECT_TRUE(john.birthday == dt);
 
   // -- 
   Person clark;
@@ -60,28 +65,28 @@ TEST(MySQL, tests) {
   clark.birthday = datetime("1955-04-22");
   clark = clark.save();
 
-  ASSERT_TRUE(clark.name == "clark");
-  ASSERT_TRUE(clark.description == "admin");
-  ASSERT_TRUE(clark.num == 123);
-  ASSERT_TRUE(clark.age == 1.2);
-  ASSERT_TRUE(clark.birthday == datetime("1955-04-22"));
+  EXPECT_TRUE(clark.name == "clark");
+  EXPECT_TRUE(clark.description == "admin");
+  EXPECT_TRUE(clark.num == 123);
+  EXPECT_TRUE(clark.age == 1.2);
+  EXPECT_TRUE(clark.birthday == datetime("1955-04-22"));
 
   // -- 
   Person bob_2 = Person::search_by_id(bob.id);
 
-  ASSERT_TRUE(bob_2.name == bob.name);
-  ASSERT_TRUE(bob_2.id == bob.id);
+  EXPECT_TRUE(bob_2.name == bob.name);
+  EXPECT_TRUE(bob_2.id == bob.id);
 
   // --
   Person jupd;
   jupd.num = 456;
   jupd.name = "johnup";
   john = john.update(jupd);
-  ASSERT_TRUE(john.name == "johnup");
-  ASSERT_TRUE(john.description == "guest");
-  ASSERT_TRUE(john.num == 456);
-  ASSERT_TRUE(john.age == 18.6);
-  ASSERT_TRUE(john.birthday == dt);
+  EXPECT_TRUE(john.name == "johnup");
+  EXPECT_TRUE(john.description == "guest");
+  EXPECT_TRUE(john.num == 456);
+  EXPECT_TRUE(john.age == 18.6);
+  EXPECT_TRUE(john.birthday == dt);
 
   // --
   Person someone;
@@ -89,14 +94,14 @@ TEST(MySQL, tests) {
   someone.id < 10;
   someone.id > 0;
   collection<Person> *people = someone.find();
-  ASSERT_EQ(1U, people->count());
+  EXPECT_EQ(1U, people->count());
   people->remove();
-  ASSERT_EQ(0U, people->count());
+  EXPECT_EQ(0U, people->count());
 
   Person all;
-  ASSERT_EQ(2, all.count());
+  EXPECT_EQ(2, all.count());
   all.remove();
-  ASSERT_EQ(0, all.count());
+  EXPECT_EQ(0, all.count());
   
   Lorm::disconnect();
 
