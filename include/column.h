@@ -23,7 +23,7 @@ public:
 	virtual std::string as_sql_litteral() const {throw "as_sql_litteral() should be defined !!";}
   virtual std::string sql_delimiter() const {return "";}
   
-	column<T>(T* v): value_(v), value_is_null(false), min_is_null(true), max_is_null(true), like_is_null(true) {};
+	column<T>(const T& v): value_(v), value_is_null(false), min_is_null(true), max_is_null(true), like_is_null(true) {};
   column<T>(): value_is_null(true), min_is_null(true), max_is_null(true), like_is_null(true) {};
 	
   const T& value() const { 

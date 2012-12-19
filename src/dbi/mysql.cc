@@ -26,7 +26,7 @@ namespace lorm {
       throw 1; // TODO
     }
 
-    types_[SQL_STRING] = "VARCHAR(2048)";
+    types_[SQL_STRING] = "TEXT";
     types_[SQL_INTEGER] = "INTEGER";
     types_[SQL_NUMERIC] = "REAL";
     types_[SQL_DATETIME] = "DATETIME";
@@ -41,13 +41,16 @@ namespace lorm {
 
   long mysql::execute(const std::string &query) {
     if(0 != mysql_query(db_, query.c_str())) {
-      throw mysql_error(db_);
+      // throw mysql_error(db_);
+      const char  * msg = mysql_error(db_);
+      throw msg;
     }
     return mysql_insert_id(db_);
   }
 
   void mysql::create_table(const std::string & name, columns_desc columns) {
     std::stringstream query;
+
     query << "CREATE TABLE IF NOT EXISTS " << name << " (";
 
     std::string sep = "";
@@ -56,12 +59,9 @@ namespace lorm {
       query << sep << "`" << it->first << "` " << types_[it->second.type];
       if(it->second.is_id) {
         query << " AUTO_INCREMENT PRIMARY KEY";
-      } else if(it->second.has_default) {
+      } else if(it->second.has_default && (it->second.type !=  SQL_STRING)) {
         query << " DEFAULT ";
         switch(it->second.type) {
-          case SQL_STRING:
-            query << "'" << any_cast<std::string>(it->second.default_value) << "'";
-            break;
           case SQL_DATETIME:
             query << "'" << any_cast<datetime>(it->second.default_value) << "'";
             break;
@@ -71,6 +71,8 @@ namespace lorm {
           case SQL_NUMERIC:
             query << any_cast<double>(it->second.default_value);
             break;
+          default: 
+            throw 1; //TODO
         }
       } else if(!it->second.nullable) {
         query << " NOT NULL";

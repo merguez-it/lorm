@@ -234,11 +234,16 @@ protected:
     std::string sep="";
     for(it = columns_.begin(); it != columns_.end(); it++) {
       const abstract_column& col = offset_to_column(it->second.offset);
+      column_t& col_type = it->second;
       if( !col.is_null() ) {
         cols  += sep + it->first;
         values += sep + col.as_sql_litteral();
         sep = ", ";
-      }
+      } else if (col_type.has_default && col_type.type == SQL_STRING) { // TEXT default values not supported by all DB engines (e.g.: mysql)
+        cols  += sep + it->first;
+				values += sep + column<std::string>(any_cast<std::string>(col_type.default_value)).as_sql_litteral(); // So, let's "force" the default programmatically 
+        sep = ", ";
+      } 
     }
   }
   

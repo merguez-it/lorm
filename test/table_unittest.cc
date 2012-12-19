@@ -102,3 +102,20 @@ TEST(Person, tests) {
 
 }
 
+TEST(Person, should_throw_if_no_table) {
+  Lorm::connect("sqlite://:memory:");
+  Person bob;
+  bob.name = "bob";
+  EXPECT_ANY_THROW(bob.save());
+  EXPECT_ANY_THROW(bob.find());
+}
+
+TEST(Person, search_by_id_should_throw_if_not_found) {
+  Lorm::connect("sqlite://:memory:");
+  Person::create();
+  Person nobody;
+  EXPECT_ANY_THROW( nobody = Person::search_by_id(1234) );
+}
+
+
+
