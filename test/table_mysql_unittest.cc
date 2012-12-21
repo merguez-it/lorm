@@ -9,7 +9,7 @@ class Person : public table<Person> {
     column<int> id;
     column<int> num;
     column<std::string> name;
-    column<std::string> description;
+    column<std::string> desc;
     column<double> age;
     column<datetime> birthday;
 };
@@ -18,7 +18,7 @@ REGISTER_TABLE(Person) {
   identity("id", &Person::id); // ID
   field("num", &Person::num, 123, false); // NOT_NULL
   field("name", &Person::name, false);
-  field("description", &Person::description, std::string("guest"));
+  field("desc", &Person::desc, std::string("guest")); //"desc" is a mySql keyword, thus should be back-quoted in SQL requests
   field("age", &Person::age, 1.2);
   field("birthday", &Person::birthday, datetime("1967-06-26 00:00:00"));
 }
@@ -38,7 +38,7 @@ TEST(MySQL, tests) {
   bob = bob.save();
 
   EXPECT_TRUE(bob.name == "bob");
-  EXPECT_TRUE(bob.description == "guest");
+  EXPECT_TRUE(bob.desc == "guest");
   EXPECT_TRUE(bob.num == 123);
   EXPECT_TRUE(bob.age == 1.2);
   EXPECT_TRUE(bob.birthday == datetime("1967-06-26 00:00:00"));
@@ -53,7 +53,7 @@ TEST(MySQL, tests) {
   john = john.save();
 
   EXPECT_TRUE(john.name == "john");
-  EXPECT_TRUE(john.description == "guest");
+  EXPECT_TRUE(john.desc == "guest");
   EXPECT_TRUE(john.num == 666);
   EXPECT_TRUE(john.age == 18.6);
   EXPECT_TRUE(john.birthday == dt);
@@ -61,12 +61,12 @@ TEST(MySQL, tests) {
   // -- 
   Person clark;
   clark.name = "clark";
-  clark.description = "admin";
+  clark.desc = "admin";
   clark.birthday = datetime("1955-04-22");
   clark = clark.save();
 
   EXPECT_TRUE(clark.name == "clark");
-  EXPECT_TRUE(clark.description == "admin");
+  EXPECT_TRUE(clark.desc == "admin");
   EXPECT_TRUE(clark.num == 123);
   EXPECT_TRUE(clark.age == 1.2);
   EXPECT_TRUE(clark.birthday == datetime("1955-04-22"));
@@ -83,7 +83,7 @@ TEST(MySQL, tests) {
   jupd.name = "johnup";
   john = john.update(jupd);
   EXPECT_TRUE(john.name == "johnup");
-  EXPECT_TRUE(john.description == "guest");
+  EXPECT_TRUE(john.desc == "guest");
   EXPECT_TRUE(john.num == 456);
   EXPECT_TRUE(john.age == 18.6);
   EXPECT_TRUE(john.birthday == dt);

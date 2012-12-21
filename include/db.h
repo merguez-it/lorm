@@ -35,7 +35,9 @@ class Lorm : public Singleton<Lorm> { // Not sure singleton is a good idea => wh
 		datetime get_datetime_col(row_iterator row, int iCol) { return dbi_->get_datetime_col(row, iCol); }
 		std::string get_string_col(row_iterator row, int iCol) { return dbi_->get_string_col(row, iCol); }
 		void execute_with_callback(const std::string &query, void *result_collection, sqlite_callback func) {dbi_->execute_with_callback(query,result_collection,func); };
-		
+    virtual std::string quoted_identifier(const std::string& ident) {return dbi_->quoted_identifier(ident);} //default: identifiers dont need quoting
+
+  
   private:
     std::string connection_string_;
     bool is_connected_;

@@ -16,7 +16,7 @@
 
 #include "reference.h"
 
-//#define DEBUG 1
+#define DEBUG 1
 //#define POTATOE_SQLITE 1
 
 #ifdef DEBUG 
@@ -202,7 +202,11 @@ protected:
 	bool is_loaded_; 	// true if this object had all its field formerly loaded. 
 										// false if no Id is set, or if only the Id had been set (case of collections that lazy-load owned instances)
   
-	template <typename CPPTYPE> 
+  static inline std::string quot(const std::string& ident) { 
+  	return Lorm::getInstance()->quoted_identifier(ident);
+  }
+  
+  template <typename CPPTYPE> 
   static column<CPPTYPE> T::* offset_to_columnref(unsigned long offset) {
     column<CPPTYPE> T::* g;
     memcpy(&g, &offset, sizeof(column<CPPTYPE> T::*));
@@ -220,7 +224,7 @@ protected:
     columns_desc::iterator it;
     for(it = columns_.begin(); it != columns_.end(); it++) {
       const abstract_column& col=offset_to_column(it->second.offset);
-      std::string condition = col.where(it->first);
+      std::string condition = col.where(quot(it->first));
       if(!condition.empty()) {
         result += next_keyword + condition;
         next_keyword = separator;
@@ -236,11 +240,11 @@ protected:
       const abstract_column& col = offset_to_column(it->second.offset);
       column_t& col_type = it->second;
       if( !col.is_null() ) {
-        cols  += sep + it->first;
+        cols  += sep + quot(it->first);
         values += sep + col.as_sql_litteral();
         sep = ", ";
       } else if (col_type.has_default && col_type.type == SQL_STRING) { // TEXT default values not supported by all DB engines (e.g.: mysql)
-        cols  += sep + it->first;
+        cols  += sep + quot(it->first);
 				values += sep + column<std::string>(any_cast<std::string>(col_type.default_value)).as_sql_litteral(); // So, let's "force" the default programmatically 
         sep = ", ";
       } 
@@ -253,7 +257,7 @@ protected:
     columns_desc::iterator it;
     for(it = columns_.begin(); it != columns_.end(); it++) {
       const abstract_column& col = offset_to_column( it->second.offset );
-      std::string condition = col.where(it->first);
+      std::string condition = col.where(quot(it->first));
       if( !condition.empty() ) {
         result += sep + condition;
         sep = " AND ";
@@ -270,9 +274,10 @@ protected:
     std::stringstream query;
 //lazy:     query << "SELECT " << linkTable << "." <<   linkTargetKey << " AS " << table<FOREIGN_CLASS>::identity_col_ << " FROM " << linkTable <<
 //		      " WHERE " << linkTable << "." << linkSourceKey << " = " << id;
-		query << "SELECT "<< FOREIGN_CLASS::classname() << ".* FROM " << FOREIGN_CLASS::classname() << " INNER JOIN " << linkTable <<
-						 " ON " << FOREIGN_CLASS::classname() << "." << FOREIGN_CLASS::identity_col_ << " = " << linkTable << "." << linkTargetKey <<
-						 " AND " << linkTable << "." << linkSourceKey << " = " << id;		
+		query << "SELECT "<< quot(FOREIGN_CLASS::classname()) << ".* FROM " << quot(FOREIGN_CLASS::classname()) << 
+             " INNER JOIN " << quot(linkTable) <<
+						 " ON " << quot(FOREIGN_CLASS::classname()) << "." << quot(FOREIGN_CLASS::identity_col_) << " = " << quot(linkTable) << "." << quot(linkTargetKey) <<
+						 " AND " << quot(linkTable) << "." << quot(linkSourceKey) << " = " << id;		
 		DEBUG_QUERY(query)
 		return FOREIGN_CLASS::select(query.str());
   }
@@ -282,7 +287,7 @@ protected:
     std::string values;
     std::stringstream query;
     column_and_values_for_insert(cols,values);
-    query << "INSERT INTO " << T::classname() << "(" << cols  << ") VALUES (" << values << ");";
+    query << "INSERT INTO " << quot(T::classname()) << "(" << cols  << ") VALUES (" << values << ");";
     DEBUG_QUERY(query)
     long id = (Lorm::getInstance()->execute(query.str()));
     return T::search_by_id(id);

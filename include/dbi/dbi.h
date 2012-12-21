@@ -35,7 +35,7 @@ namespace lorm {
 	typedef int (*sqlite_callback)(void*,int,char**,char**); // TEST TEST TEST
 
 	class dbi {
-    public:
+  public:
 		virtual void close() = 0;
 		virtual long execute(const std::string &query) = 0;
 		virtual void create_table(const std::string & name, columns_desc columns) = 0;
@@ -54,6 +54,8 @@ namespace lorm {
 		virtual std::string get_string_col(row_iterator row, int iCol) = 0;
 		
 		virtual void execute_with_callback(const std::string &query, void *result_collection, sqlite_callback func) = 0;
+    virtual std::string quoted_identifier(const std::string& ident) {return ident;} //default: identifiers dont need quoting
+    
   };
 }
 
