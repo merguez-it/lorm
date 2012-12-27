@@ -102,6 +102,14 @@ TEST(Person, tests) {
 
 }
 
+TEST(Person, should_fail_if_bad_connection_string) {
+    EXPECT_ANY_THROW(Lorm::connect("sqlite:///path/to/nowhere"));
+    
+    EXPECT_ANY_THROW(Lorm::connect("mysql:///path/to/nowhere"));
+
+    EXPECT_ANY_THROW(Lorm::connect("dummy:///path/to/nowhere"));
+}
+
 TEST(Person, should_throw_if_no_table) {
   Lorm::connect("sqlite://:memory:");
   Person bob;

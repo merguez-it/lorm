@@ -16,7 +16,7 @@
 
 #include <iostream>
 
-Lorm::Lorm() : is_connected_(false) {}
+Lorm::Lorm() : is_connected_(false), dbi_(NULL) {}
 
 void Lorm::conn(std::string cs) {
   if(is_connected_) {
@@ -36,7 +36,9 @@ void Lorm::conn(std::string cs) {
 #else
     throw 1; // TODO
 #endif
-  } // TODO ADD PG SUPPORT
+  } else {
+      throw ("DB not supported !");
+  }// TODO ADD PG SUPPORT
 
   connection_string_ = cs;
   is_connected_ = true;

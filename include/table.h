@@ -16,7 +16,7 @@
 
 #include "reference.h"
 
-#define DEBUG 1
+//#define DEBUG 1
 //#define POTATOE_SQLITE 1
 
 #ifdef DEBUG 
