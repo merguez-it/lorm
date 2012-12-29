@@ -93,7 +93,7 @@ public:
     query << "SELECT * FROM " << T::classname();
     query << " WHERE " << T::identity_col_ << " = " << id << ";"; 
     DEBUG_QUERY(query)
-		collection<T> *data = select(query.str());
+		collection<T> *data = select(query.str(),false);
     if(data->size() > 1) {
       throw "Unique id is not unique ";
     }
@@ -268,18 +268,17 @@ protected:
   
   
   template <class FOREIGN_CLASS> 
-  collection<FOREIGN_CLASS> * join_many_using_table( const std::string &linkTable, 
+  collection<FOREIGN_CLASS> * join_many_using_table( const std::string &linkTable,
                                                    const std::string &linkSourceKey,
                                                    const std::string &linkTargetKey,int id)  const {  
     std::stringstream query;
-//lazy:     query << "SELECT " << linkTable << "." <<   linkTargetKey << " AS " << table<FOREIGN_CLASS>::identity_col_ << " FROM " << linkTable <<
-//		      " WHERE " << linkTable << "." << linkSourceKey << " = " << id;
-		query << "SELECT "<< quot(FOREIGN_CLASS::classname()) << ".* FROM " << quot(FOREIGN_CLASS::classname()) << 
-             " INNER JOIN " << quot(linkTable) <<
-						 " ON " << quot(FOREIGN_CLASS::classname()) << "." << quot(FOREIGN_CLASS::identity_col_) << " = " << quot(linkTable) << "." << quot(linkTargetKey) <<
-						 " AND " << quot(linkTable) << "." << quot(linkSourceKey) << " = " << id;		
+      query << "SELECT " << linkTable << "." <<   linkTargetKey << " AS " << table<FOREIGN_CLASS>::identity_col_ << " FROM " << linkTable << " WHERE " << linkTable << "." << linkSourceKey << " = " << id;
+//		query << "SELECT "<< quot(FOREIGN_CLASS::classname()) << ".* FROM " << quot(FOREIGN_CLASS::classname()) << 
+//             " INNER JOIN " << quot(linkTable) <<
+//						 " ON " << quot(FOREIGN_CLASS::classname()) << "." << quot(FOREIGN_CLASS::identity_col_) << " = " << quot(linkTable) << "." << quot(linkTargetKey) <<
+//						 " AND " << quot(linkTable) << "." << quot(linkSourceKey) << " = " << id;		
 		DEBUG_QUERY(query)
-		return FOREIGN_CLASS::select(query.str());
+		return FOREIGN_CLASS::select(query.str(),true);
   }
   
   T save_() const {
@@ -295,13 +294,13 @@ protected:
   
   collection<T> *find_() const {
     std::stringstream query;
-    query << "SELECT * FROM " << T::classname();
+      query << "SELECT " << identity_col_ << " FROM " << T::classname();
     std::string clause_where=column_and_values_for_select();
     if (!clause_where.empty()) {
       query << " WHERE " << clause_where << ";";
     }
     DEBUG_QUERY(query)
-		return select(query.str());
+		return select(query.str(),true);
   }
   
   void remove_() const {

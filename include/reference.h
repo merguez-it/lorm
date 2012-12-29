@@ -30,7 +30,7 @@ public:
   }
   
   bool exists() {
-    return value!=NULL;
+    return !value_is_null;
   }
   
   FOREIGN_CLASS& operator() (bool force_reload=false) {

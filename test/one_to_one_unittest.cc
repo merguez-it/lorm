@@ -80,11 +80,4 @@ TEST(To_one, create_retrieve_two_relationships) {
   
 }
 
-TEST(To_one, attempt_retrieve_null_relationships) {
-  Lorm::connect("sqlite://:memory:");
-  Person::create();
-  
-  Address::create();  
-  Lorm::disconnect();
-}
 
