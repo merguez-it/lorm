@@ -90,7 +90,7 @@ public:
   
   static T search_by_id(int id) {    
     std::stringstream query;
-    query << "SELECT * FROM " << T::classname();
+    query << "SELECT " << T::columns_for_select() << " FROM " << T::classname();
     query << " WHERE " << T::identity_col_ << " = " << id << ";"; 
     DEBUG_QUERY(query)
 		collection<T> *data = select(query.str(),false);
@@ -160,34 +160,40 @@ public:
 			int n_cols=db->col_count(row);
 			T result;
 			result.is_loaded_=!get_keys_only;
-			for (int iCol=0; iCol < n_cols; iCol++) {
-				std::string db_col_name = db->col_name(row,iCol);
-				if ( columns_.count(db_col_name) == 1 && !db->col_is_null(row, iCol) ) { // colonne mappée ET non nulle => on la prends
-					lorm::column_t cur_col=columns_.find(db_col_name)->second;
-					switch(cur_col.type) {
-						case lorm::SQL_INTEGER: {
-							column<int> T::* f=offset_to_columnref<int>(cur_col.offset);
-							(result.*f) = db->get_int_col(row, iCol);
+			if (get_keys_only) {
+				column<int> T::* f=offset_to_columnref<int>(columns_.find(identity_col_)->second.offset);
+				(result.*f) = db->get_int_col(row, 0);
+			}
+			else {
+				columns_desc::const_iterator itCol=columns_.begin();
+				for (int iCol=0; iCol < n_cols; iCol++) {
+					if (!db->col_is_null(row, iCol) ) { // colonne mappée ET non nulle => on la prends
+						switch(itCol->second.type) {
+							case lorm::SQL_INTEGER: {
+								column<int> T::* f=offset_to_columnref<int>(itCol->second.offset);
+								(result.*f) = db->get_int_col(row, iCol);
+							}
+								break;
+							case lorm::SQL_STRING: {
+								column<std::string> T::* f=offset_to_columnref<std::string>(itCol->second.offset);
+								(result.*f) = db->get_string_col(row, iCol);
+							}
+								break;
+							case lorm::SQL_DATETIME: {
+								column<datetime> T::* f=offset_to_columnref<datetime>(itCol->second.offset);
+								(result.*f) = db->get_datetime_col(row, iCol);
+							}
+								break;
+							case lorm::SQL_NUMERIC: {
+								column<double> T::* f=offset_to_columnref<double>(itCol->second.offset);
+								(result.*f) = db->get_double_col(row, iCol);
+							}
+								break;
+							default:
+								throw "DB Type not defined"; // TODO
 						}
-							break;
-						case lorm::SQL_STRING: {
-							column<std::string> T::* f=offset_to_columnref<std::string>(cur_col.offset);
-							(result.*f) = db->get_string_col(row, iCol);
-						}
-							break;
-						case lorm::SQL_DATETIME: {
-							column<datetime> T::* f=offset_to_columnref<datetime>(cur_col.offset);
-							(result.*f) = db->get_datetime_col(row, iCol);
-						}
-							break;
-						case lorm::SQL_NUMERIC: {
-							column<double> T::* f=offset_to_columnref<double>(cur_col.offset);
-							(result.*f) = db->get_double_col(row, iCol);
-						}
-							break;
-						default:
-							throw "DB Type not defined"; // TODO
 					}
+					itCol++;
 				}
 			}
 			result_list->push_back(result); // Using pointers could avoid useless copies
@@ -233,7 +239,18 @@ protected:
     return result;
   }
   
-  void column_and_values_for_insert(/* out */ std::string& cols,/* out */ std::string& values) const {
+	static std::string columns_for_select() {
+    columns_desc::iterator it;
+		std::string result;
+    std::string sep="";
+    for(it = columns_.begin(); it != columns_.end(); it++) {
+        result  += sep + quot(it->first);
+        sep = ", ";
+    }
+		return result;
+  }
+	
+	void column_and_values_for_insert(/* out */ std::string& cols,/* out */ std::string& values) const {
     columns_desc::iterator it;
     std::string sep="";
     for(it = columns_.begin(); it != columns_.end(); it++) {
@@ -294,13 +311,13 @@ protected:
   
   collection<T> *find_() const {
     std::stringstream query;
-      query << "SELECT " << identity_col_ << " FROM " << T::classname();
+      query << "SELECT " << columns_for_select()  << " FROM " << T::classname();
     std::string clause_where=column_and_values_for_select();
     if (!clause_where.empty()) {
       query << " WHERE " << clause_where << ";";
     }
     DEBUG_QUERY(query)
-		return select(query.str(),true);
+		return select(query.str(),false);
   }
   
   void remove_() const {

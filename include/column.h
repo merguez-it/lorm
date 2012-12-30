@@ -75,7 +75,7 @@ public:
     min_=m;
 		min_is_null=false;
     max_=n;
-		min_is_null=false;
+		max_is_null=false;
   }
   
   void like(const T& v) {

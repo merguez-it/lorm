@@ -102,7 +102,7 @@ namespace lorm {
 	}
 	
 	int sqlite::col_count(row_iterator row) {
-		return sqlite3_column_count((sqlite3_stmt *)row);
+		return sqlite3_data_count((sqlite3_stmt *)row);
 	}
 	
 	bool sqlite::col_is_null(row_iterator row, int iCol) {
