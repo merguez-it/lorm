@@ -91,9 +91,9 @@ public:
   static T search_by_id(int id) {    
     std::stringstream query;
     query << "SELECT " << T::columns_for_select() << " FROM " << T::classname();
-    query << " WHERE " << T::identity_col_ << " = " << id << ";"; 
+    query << " WHERE " << T::identity_col_ << " = ? ;"; 
     DEBUG_QUERY(query)
-		collection<T> *data = select(query.str(),false);
+		collection<T> *data = select(query.str(),false,id);
     if(data->size() > 1) {
       throw "Unique id is not unique ";
     }
@@ -152,10 +152,10 @@ public:
 		return result_list;
 	}
 #else
-	static collection<T> *select(const std::string& query, bool get_keys_only=false)  {
+	static collection<T> *select(const std::string& query, bool get_keys_only=false, int bind_id = NO_BIND)  {
 		collection<T> *result_list = new collection<T>;
 		Lorm *db = Lorm::getInstance();
-		row_iterator row=db->select_start(query);
+		row_iterator row=db->select_start(query,bind_id);
 		while (db->select_next(row)) {
 			int n_cols=db->col_count(row);
 			T result;
@@ -289,13 +289,13 @@ protected:
                                                    const std::string &linkSourceKey,
                                                    const std::string &linkTargetKey,int id)  const {  
     std::stringstream query;
-      query << "SELECT " << linkTable << "." <<   linkTargetKey << " AS " << table<FOREIGN_CLASS>::identity_col_ << " FROM " << linkTable << " WHERE " << linkTable << "." << linkSourceKey << " = " << id;
+      query << "SELECT " << linkTable << "." <<   linkTargetKey << " AS " << table<FOREIGN_CLASS>::identity_col_ << " FROM " << linkTable << " WHERE " << linkTable << "." << linkSourceKey << " = ?";
 //		query << "SELECT "<< quot(FOREIGN_CLASS::classname()) << ".* FROM " << quot(FOREIGN_CLASS::classname()) << 
 //             " INNER JOIN " << quot(linkTable) <<
 //						 " ON " << quot(FOREIGN_CLASS::classname()) << "." << quot(FOREIGN_CLASS::identity_col_) << " = " << quot(linkTable) << "." << quot(linkTargetKey) <<
 //						 " AND " << quot(linkTable) << "." << quot(linkSourceKey) << " = " << id;		
 		DEBUG_QUERY(query)
-		return FOREIGN_CLASS::select(query.str(),true);
+		return FOREIGN_CLASS::select(query.str(),true,id);
   }
   
   T save_() const {

@@ -94,8 +94,16 @@ namespace lorm {
 	  MYSQL_ROW mysql_row;
 	};
 	
-	row_iterator mysql::select_start(const std::string & query) {
-		if(0 != mysql_query(db_, query.c_str())) {
+	row_iterator mysql::select_start(const std::string & query,  int bind) {
+    std::string tmpq = query;
+    if (bind != NO_BIND) { // TODO: Implement binding for mySQL parameters
+      size_t pos=0;
+      pos=tmpq.find("?");
+      if (pos!=std::string::npos) {
+          tmpq.replace(pos,1,util::to_string<int>(bind));
+      }
+    }
+		if(0 != mysql_query(db_, tmpq.c_str())) {
       throw mysql_error(db_);
     }
 		MYSQL_RES *mysql_result =  mysql_use_result(db_);

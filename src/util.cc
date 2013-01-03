@@ -131,7 +131,7 @@ std::pair<std::string, std::string> cut(std::string data, const std::string & se
   }
 
   std::string::iterator pos_ = std::search(data.begin(), data.end(), sep.begin(), sep.end());
-  int dis_ = std::distance(data.begin(), pos_);
+  unsigned int dis_ = std::distance(data.begin(), pos_);
   if(dis_ >= data.size()) {
     first_ = data;
     second_ = "";

@@ -1,8 +1,10 @@
 #include "dbi/sqlite.h"
 #include "table.h"
+#include "dbi/sqlite_statement.h"
 #include <vector>
 #include <sstream>
 #include <iostream>
+#include <tr1/memory>
 
 namespace lorm {
   sqlite::sqlite(std::string cs) : is_open_(false) {
@@ -19,7 +21,9 @@ namespace lorm {
   }
 
   void sqlite::close() {
+    
     if(is_open_) {
+      sqlite_statement::reset_cache();
       is_open_ = !(SQLITE_OK == sqlite3_close(db_));
     }
 
@@ -73,21 +77,16 @@ namespace lorm {
   }
 	
 //SELECT interface subset
-	row_iterator sqlite::select_start(const std::string & query)	{
-		sqlite3_stmt *stmt = NULL;
-    int rc = sqlite3_prepare_v2(db_, query.c_str(), -1, &stmt, 0);
-    if(rc != SQLITE_OK || !stmt) {
-			throw 1; //TODO
-    }
-		return stmt;
+	row_iterator sqlite::select_start(const std::string & query, int bind)	{
+		return new sqlite_statement(db_,query,bind);
 	}
 						
 	bool sqlite::select_next(row_iterator& row) {
-		sqlite3_stmt *stmt = (sqlite3_stmt *)row;
-		int rc = sqlite3_step(stmt);
+		sqlite_statement *stmt = (sqlite_statement *)row;
+		int rc = sqlite3_step(stmt->statement());
 		if (SQLITE_DONE == rc) {
-			sqlite3_finalize(stmt);
-			stmt =NULL;
+      delete stmt;
+      stmt=NULL;
 		} else if (SQLITE_ROW != rc) {
 			throw 1; // TODO
 		}
@@ -96,38 +95,37 @@ namespace lorm {
 	};
 	
 	void sqlite::select_end(row_iterator row)  {
-		sqlite3_stmt *stmt = (sqlite3_stmt *)row;
-		sqlite3_finalize(stmt); // 	Harmless on a null pointer => safe (even if useless) to be called ,
-														//	even after "select_next" has nullified the statement;
+		sqlite_statement *stmt = (sqlite_statement *)row;
+    delete stmt;
 	}
 	
 	int sqlite::col_count(row_iterator row) {
-		return sqlite3_data_count((sqlite3_stmt *)row);
+		return sqlite3_data_count(((sqlite_statement *)(row))->statement());
 	}
 	
 	bool sqlite::col_is_null(row_iterator row, int iCol) {
-		return SQLITE_NULL == sqlite3_column_type((sqlite3_stmt *)row, iCol);
+		return SQLITE_NULL == sqlite3_column_type(((sqlite_statement *)(row))->statement(), iCol);
 	};
 
 	const char *sqlite::col_name(row_iterator row, int iCol) {
-	  return sqlite3_column_name((sqlite3_stmt *)row, iCol);
+	  return sqlite3_column_name(((sqlite_statement *)(row))->statement(), iCol);
 	}
 
 	int sqlite::get_int_col(row_iterator row, int iCol) {
-		return sqlite3_column_int( (sqlite3_stmt *)row , iCol );
+		return sqlite3_column_int( ((sqlite_statement *)(row))->statement() , iCol );
 	};
 	
 	std::string sqlite::get_string_col(row_iterator row, int iCol) {
-		const unsigned char * s = sqlite3_column_text( (sqlite3_stmt *)row , iCol );
+		const unsigned char * s = sqlite3_column_text( ((sqlite_statement *)(row))->statement() , iCol );
 		return std::string( (const char *) s );
 	};
 	
 	double sqlite::get_double_col(row_iterator row, int iCol) {
-		return sqlite3_column_double((sqlite3_stmt *)row , iCol );
+		return sqlite3_column_double(((sqlite_statement *)(row))->statement() , iCol );
 	};
 	
 	datetime sqlite::get_datetime_col(row_iterator row, int iCol) {
-		const char * s = (const char *)sqlite3_column_text((sqlite3_stmt *)row, iCol);
+		const char * s = (const char *)sqlite3_column_text(((sqlite_statement *)(row))->statement(), iCol);
 		return datetime(s);
 	};
 	

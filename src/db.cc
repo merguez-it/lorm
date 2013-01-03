@@ -46,7 +46,6 @@ void Lorm::conn(std::string cs) {
 
 void Lorm::discon() {
   dbi_->close();
-  delete dbi_;
   connection_string_ = "";
   is_connected_ = false;
 }

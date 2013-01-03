@@ -116,6 +116,7 @@ TEST(Person, should_throw_if_no_table) {
   bob.name = "bob";
   EXPECT_ANY_THROW(bob.save());
   EXPECT_ANY_THROW(bob.find());
+  Lorm::disconnect();
 }
 
 TEST(Person, search_by_id_should_throw_if_not_found) {
@@ -123,6 +124,7 @@ TEST(Person, search_by_id_should_throw_if_not_found) {
   Person::create();
   Person nobody;
   EXPECT_ANY_THROW( nobody = Person::search_by_id(1234) );
+  Lorm::disconnect();
 }
 
 

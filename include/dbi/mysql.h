@@ -14,7 +14,7 @@ namespace lorm {
       long execute(const std::string &query);
       void create_table(const std::string & name, columns_desc columns);
 
-			row_iterator select_start(const std::string & query);
+			row_iterator select_start(const std::string & query, int bind);
 			bool select_next(row_iterator& row);
 			void select_end(row_iterator row);
 			int  col_count(row_iterator row);

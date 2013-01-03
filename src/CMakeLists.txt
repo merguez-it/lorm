@@ -40,6 +40,7 @@ if(HAVE_SQLITE)
   set(LORM_SOURCES
     ${LORM_SOURCES}
     dbi/sqlite.cc
+ 	dbi/sqlite_statement.cc
     )
   set(DBI_LIBS
     ${DBI_LIBS}

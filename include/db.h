@@ -23,7 +23,7 @@ class Lorm : public Singleton<Lorm> { // Not sure singleton is a good idea => wh
     long execute(const std::string & query);
     void create_table(const std::string & name, columns_desc columns);
 	  // select interface
-	  row_iterator select_start(const std::string & query) { return dbi_->select_start(query); }
+	  row_iterator select_start(const std::string & query, int bind = NO_BIND) { return dbi_->select_start(query,bind); }
 		bool select_next(row_iterator& row) { return dbi_->select_next(row); } 
 		void select_end(row_iterator row) {  dbi_->select_end(row); } 
 		int col_count(row_iterator row) { return dbi_->col_count(row); }

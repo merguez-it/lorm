@@ -11,7 +11,9 @@
 #include "collection.h"
 
 namespace lorm {
-
+  
+  #define NO_BIND -1
+  
   enum dbi_column_type {
     SQL_STRING,
     SQL_INTEGER,
@@ -40,7 +42,7 @@ namespace lorm {
 		virtual long execute(const std::string &query) = 0;
 		virtual void create_table(const std::string & name, columns_desc columns) = 0;
 		
-		virtual row_iterator select_start(const std::string & query) = 0;
+		virtual row_iterator select_start(const std::string & query,  int bind = NO_BIND ) = 0;
 		virtual bool select_next(row_iterator &row /* in & out */) = 0;
 		virtual void select_end(row_iterator row) = 0;
 		
