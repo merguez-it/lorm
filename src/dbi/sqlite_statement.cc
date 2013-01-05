@@ -18,7 +18,6 @@ sqlite_statement::sqlite_statement(sqlite3 *db, const std::string &query, int bi
     rc = sqlite3_prepare_v2(db, query.c_str(), -1, &stmt_, 0);
     if (bind_id != NO_BIND) {
       prepared_stmts_[query]=stmt_;
-      std::cout << "caching query : " << query << std::endl;
     }
   } else {
     stmt_=stmt_it->second;
@@ -35,7 +34,6 @@ sqlite_statement::sqlite_statement(sqlite3 *db, const std::string &query, int bi
 sqlite_statement::~sqlite_statement() {
   std::map<std::string, sqlite3_stmt * >::iterator stmt_it = prepared_stmts_.find(sqlite3_sql(stmt_));
   if (stmt_it == prepared_stmts_.end()) { // free if not cached
-    std::cout << "deleting non-cached query : " << sqlite3_sql(stmt_) << std::endl;
     sqlite3_finalize(stmt_);
   }
 }
@@ -43,7 +41,6 @@ sqlite_statement::~sqlite_statement() {
 void sqlite_statement::reset_cache() {
   std::map<std::string, sqlite3_stmt * >::iterator stmt_it;
   for (stmt_it=prepared_stmts_.begin();stmt_it!=prepared_stmts_.end();stmt_it++) {
-    std::cout << "deleting cached query : " << sqlite3_sql(stmt_it->second) << std::endl;
     sqlite3_finalize(stmt_it->second);
   }
   prepared_stmts_.clear();
