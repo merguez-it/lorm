@@ -91,7 +91,7 @@ public:
   static T search_by_id(int id) {    
     std::stringstream query;
     query << "SELECT " << T::columns_for_select() << " FROM " << T::classname();
-    query << " WHERE " << T::identity_col_ << " = ? ;"; 
+    query << " WHERE " << T::identity_col() << " = ? ;";
     DEBUG_QUERY(query)
 		collection<T> *data = select(query.str(),false,id);
     if(data->size() > 1) {
@@ -161,7 +161,7 @@ public:
 			T result;
 			result.is_loaded_=!get_keys_only;
 			if (get_keys_only) {
-				column<int> T::* f=offset_to_columnref<int>(columns_.find(identity_col_)->second.offset);
+				column<int> T::* f=offset_to_columnref<int>(columns_.find(T::identity_col())->second.offset);
 				(result.*f) = db->get_int_col(row, 0);
 			}
 			else {
@@ -289,7 +289,7 @@ protected:
                                                    const std::string &linkSourceKey,
                                                    const std::string &linkTargetKey,int id)  const {  
     std::stringstream query;
-      query << "SELECT " << linkTable << "." <<   linkTargetKey << " AS " << table<FOREIGN_CLASS>::identity_col_ << " FROM " << linkTable << " WHERE " << linkTable << "." << linkSourceKey << " = ?";
+      query << "SELECT " << linkTable << "." <<   linkTargetKey << " AS " << FOREIGN_CLASS::identity_col() << " FROM " << linkTable << " WHERE " << linkTable << "." << linkSourceKey << " = ?";
 //		query << "SELECT "<< quot(FOREIGN_CLASS::classname()) << ".* FROM " << quot(FOREIGN_CLASS::classname()) << 
 //             " INNER JOIN " << quot(linkTable) <<
 //						 " ON " << quot(FOREIGN_CLASS::classname()) << "." << quot(FOREIGN_CLASS::identity_col_) << " = " << quot(linkTable) << "." << quot(linkTargetKey) <<
@@ -400,6 +400,7 @@ collection < FOREIGN_CLASS > &THIS_CLASS::role (bool force_reload) {\
 #define TABLE_INIT(K, ...) \
   K(); \
   static void register_table();\
+  static const std::string& identity_col(); \
   K save() const; \
   collection<K> *find() const; \
   int count() const; \
@@ -413,6 +414,7 @@ collection < FOREIGN_CLASS > &THIS_CLASS::role (bool force_reload) {\
 #define REGISTER_TABLE(K) \
   template <class T> std::map<std::string,lorm::column_t> table<K>::columns_;\
   template <class T> std::string table<K>::identity_col_;\
+  const std::string& K::identity_col() {if (columns_.empty() ) K::register_table(); return identity_col_;} \
   K::K() {if (columns_.empty() ) K::register_table(); } \
   K K::save() const { return save_(); } \
   collection<K> *K::find() const { return find_(); } \
