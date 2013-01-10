@@ -30,6 +30,8 @@ namespace lorm {
     types_[SQL_INTEGER] = "INTEGER";
     types_[SQL_NUMERIC] = "REAL";
     types_[SQL_DATETIME] = "DATETIME";
+    types_[SQL_BOOLEAN] = "BOOL";
+
   }
 
   void mysql::close() {
@@ -67,6 +69,9 @@ namespace lorm {
             break;
           case SQL_INTEGER:
             query << any_cast<int>(it->second.default_value);
+            break;
+          case SQL_BOOLEAN:
+            query << any_cast<bool>(it->second.default_value);
             break;
           case SQL_NUMERIC:
             query << any_cast<double>(it->second.default_value);

@@ -18,7 +18,8 @@ namespace lorm {
     SQL_STRING,
     SQL_INTEGER,
     SQL_NUMERIC,
-    SQL_DATETIME
+    SQL_DATETIME,
+    SQL_BOOLEAN
   };
 
   struct column_t {

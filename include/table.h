@@ -69,6 +69,7 @@ public:
   static std::string identity_col_;
   static columns_desc columns_;
   ID_FUN(int)
+  FIELD_FUN(bool, lorm::SQL_BOOLEAN)
   FIELD_FUN(int, lorm::SQL_INTEGER)
   FIELD_FUN(std::string, lorm::SQL_STRING)
   FIELD_FUN(double, lorm::SQL_NUMERIC)
@@ -121,22 +122,27 @@ public:
 						column<int> T::* f=offset_to_columnref<int>(cur_col.offset);
 						result_list.at(iResult).*f = util::from_string<int>(std::string(values[iCol]));
 					}
-						break;
+          break;
+          case lorm::SQL_BOOLEAN: {
+						column<bool> T::* f=offset_to_columnref<bool>(cur_col.offset);
+						result_list.at(iResult).*f = util::from_string<bool>(std::string(values[iCol]));
+					}
+          break;
 					case lorm::SQL_STRING: {
 						column<std::string> T::* f=offset_to_columnref<std::string>(cur_col.offset);
 						result_list.at(iResult).*f = std::string(values[iCol]);
 					}
-						break;
+          break;
 					case lorm::SQL_DATETIME: {
 						column<datetime> T::* f=offset_to_columnref<datetime>(cur_col.offset);
 						result_list.at(iResult).*f = datetime::datetime(std::string(values[iCol]));
 					}
-						break;
+          break;
 					case lorm::SQL_NUMERIC: {
 						column<double> T::* f=offset_to_columnref<double>(cur_col.offset);
 						result_list.at(iResult).*f = util::from_string<double>(std::string(values[iCol]));
 					}
-						break;
+          break;
 					default:
 						throw "DB Type not defined"; // TODO
 				}
@@ -169,26 +175,32 @@ public:
 				for (int iCol=0; iCol < n_cols; iCol++) {
 					if (!db->col_is_null(row, iCol) ) { // colonne mappée ET non nulle => on la prends
 						switch(itCol->second.type) {
-							case lorm::SQL_INTEGER: {
+							case lorm::SQL_INTEGER:{
 								column<int> T::* f=offset_to_columnref<int>(itCol->second.offset);
 								(result.*f) = db->get_int_col(row, iCol);
 							}
-								break;
+              break;
+              case lorm::SQL_BOOLEAN:
+              {
+								column<bool> T::* f=offset_to_columnref<bool>(itCol->second.offset);
+								(result.*f) = (bool)db->get_int_col(row, iCol);
+							}
+              break;
 							case lorm::SQL_STRING: {
 								column<std::string> T::* f=offset_to_columnref<std::string>(itCol->second.offset);
 								(result.*f) = db->get_string_col(row, iCol);
 							}
-								break;
+              break;
 							case lorm::SQL_DATETIME: {
 								column<datetime> T::* f=offset_to_columnref<datetime>(itCol->second.offset);
 								(result.*f) = db->get_datetime_col(row, iCol);
 							}
-								break;
+              break;
 							case lorm::SQL_NUMERIC: {
 								column<double> T::* f=offset_to_columnref<double>(itCol->second.offset);
 								(result.*f) = db->get_double_col(row, iCol);
 							}
-								break;
+              break;
 							default:
 								throw "DB Type not defined"; // TODO
 						}

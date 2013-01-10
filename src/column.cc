@@ -10,6 +10,13 @@
 #include "column.h"
 
 // Specializations of abstract entry-points, type by type
+template <> std::string column<bool>::as_sql_litteral() const {
+  if (!is_null()) {
+    return sql_delimiter() + util::to_string<bool>(value_) + sql_delimiter();
+  }
+  return sql_delimiter()+sql_delimiter();
+}
+
 template <> std::string column<int>::as_sql_litteral() const {
   if (!is_null()) {
     return sql_delimiter() + util::to_string<int>(value_) + sql_delimiter();
