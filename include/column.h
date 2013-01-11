@@ -260,7 +260,7 @@ template <class T> std::ostream& operator<< (std::ostream& os, const column<T>& 
 
 // Specializations of abstract entry-points, type by type
 template <> extern std::string column<int>::as_sql_litteral() const;
-template <> extern std::string column<int>::as_sql_litteral() const;
+template <> extern std::string column<bool>::as_sql_litteral() const;
 template <> extern std::string column<std::string>::sql_delimiter() const;
 template <> extern std::string column<datetime>::sql_delimiter() const;
 template <> extern std::string column<std::string>::as_sql_litteral() const;
