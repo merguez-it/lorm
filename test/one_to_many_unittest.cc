@@ -18,7 +18,7 @@ public:
   TABLE_INIT(Book);
   column<int> id;
   column<std::string> title;
-  reference<Person> owner;
+  REFERENCE(Person, owner);
 };
 
 class Person : public table<Person> {
@@ -32,15 +32,16 @@ public:
 // Persistent objects implementation
 
 REGISTER_TABLE(Book) {
-  identity("book_id", &Book::id); // ID
-  field("title", &Book::title);
-  has_one("owner_id",&Book::owner);
+  register_identity("book_id", &Book::id); // ID
+  register_field("title", &Book::title);
+  register_reference("owner_id",&Book::owner);
 }
 
 REGISTER_TABLE(Person) {
-  identity("person_id", &Person::id); // ID
-  field("name", &Person::name, false);
+  register_identity("person_id", &Person::id); // ID
+  register_field("name", &Person::name, false);
 }
+has_one(Book, Person, owner);
 has_many(Person,Book,personal_library,owner);
 
 // Test stuff 

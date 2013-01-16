@@ -33,17 +33,6 @@ public:
     return !value_is_null;
   }
   
-  FOREIGN_CLASS& operator() (bool force_reload=false) {
-    return get_role(force_reload);
-  }
-  
-  void operator() (const FOREIGN_CLASS &that_role) {
-     set_role(that_role);
-  }
-    
-private:
-  std::tr1::shared_ptr<FOREIGN_CLASS> role;
-  
   FOREIGN_CLASS &get_role (bool force_reload=false) {
     if (!role.get() || force_reload) {
       role.reset(new FOREIGN_CLASS());
@@ -61,5 +50,7 @@ private:
     role.reset(p);
   }
   
+private:
+  std::tr1::shared_ptr<FOREIGN_CLASS> role;
 };
 #endif

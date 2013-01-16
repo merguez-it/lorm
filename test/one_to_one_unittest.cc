@@ -11,10 +11,10 @@ public:
 };
 
 REGISTER_TABLE(Address) {
-  identity("id", &Address::id); // ID
-  field("zip", &Address::zip,0,false); // NOT_NULL
-  field("street", &Address::street, false);
-  field("city", &Address::city,false);
+  register_identity("id", &Address::id); // ID
+  register_field("zip", &Address::zip,0,false); // NOT_NULL
+  register_field("street", &Address::street, false);
+  register_field("city", &Address::city,false);
 }
 
 class Person : public table<Person> {
@@ -26,20 +26,24 @@ class Person : public table<Person> {
     column<std::string> desc;
     column<double> age;
     column<datetime> birthday;
-    reference<Address> address;
-    reference<Address> office;
+    REFERENCE(Address,address);
+    REFERENCE(Address,office);
 };
 
 REGISTER_TABLE(Person) {
-  identity("id", &Person::id); // ID
-  field("num", &Person::num, 123, false); // NOT_NULL
-  field("name", &Person::name, false);
-  field("desc", &Person::desc, std::string("guest"));
-  field("age", &Person::age, 1.2);
-  field("birthday", &Person::birthday, datetime("1967-06-26 00:00:00"));
-  has_one("address_id", &Person::address);
-  has_one("bureauId", &Person::office);
+  register_identity("id", &Person::id); // ID
+  register_field("num", &Person::num, 123, false); // NOT_NULL
+  register_field("name", &Person::name, false);
+  register_field("desc", &Person::desc, std::string("guest"));
+  register_field("age", &Person::age, 1.2);
+  register_field("birthday", &Person::birthday, datetime("1967-06-26 00:00:00"));
+  register_reference("address_id", &Person::address);
+  register_reference("bureauId", &Person::office);
 }
+
+has_one(Person,Address,address);
+has_one(Person,Address,office);
+
 
 TEST(To_one, create_retrieve_two_relationships) {
   Lorm::connect("sqlite://:memory:");

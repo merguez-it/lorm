@@ -7,15 +7,14 @@
 class Person : public table<Person> {
   public:
     TABLE_INIT(Person);
-
     column<int> id;
     column<int> num;
     column<std::string> name;
     column<std::string> desc;
     column<double> age;
     column<datetime> birthday;
-    reference<Address> address;
-    reference<Address> bureau;
+    REFERENCE(Address, address);
+    REFERENCE(Address, bureau);
 };
 
 #endif // __PERSON_H

@@ -12,17 +12,16 @@ class Person : public table<Person> {
     column<double> age;
     column<datetime> birthday;
     column<bool> is_cool;
-
 };
 
 REGISTER_TABLE(Person) {
-  identity("id", &Person::id); // ID
-  field("num", &Person::num, 123, false); // NOT_NULL
-  field("name", &Person::name, false);
-  field("desc", &Person::desc, std::string("guest"));
-  field("age", &Person::age, 1.2);
-  field("birthday", &Person::birthday, datetime("1967-06-26 00:00:00"));
-  field("is_cool", &Person::is_cool,true,true);
+  register_identity("id", &Person::id); // ID
+  register_field("num", &Person::num, 123, false); // NOT_NULL
+  register_field("name", &Person::name, false);
+  register_field("desc", &Person::desc, std::string("guest"));
+  register_field("age", &Person::age, 1.2);
+  register_field("birthday", &Person::birthday, datetime("1967-06-26 00:00:00"));
+  register_field("is_cool", &Person::is_cool,true,true);
 }
 
 TEST(Person, tests) {

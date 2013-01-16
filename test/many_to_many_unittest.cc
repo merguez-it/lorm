@@ -20,8 +20,8 @@ public:
 };
 
 REGISTER_TABLE(Book) {
-  identity("book_id", &Book::id); // ID
-  field("title", &Book::title);
+  register_identity("book_id", &Book::id); // ID
+  register_field("title", &Book::title);
 }
 has_and_belongs_to_many(Book,Person,borrowers,"borrows","borrowed_book_id", "borrower_id");
 
@@ -35,8 +35,8 @@ public:
 };
 
 REGISTER_TABLE(Person) {
-  identity("person_id", &Person::id); // ID
-  field("name", &Person::name, false);
+  register_identity("person_id", &Person::id); // ID
+  register_field("name", &Person::name, false);
 }
 has_and_belongs_to_many(Person,Book,borrowed_books,"borrows","borrower_id","borrowed_book_id");
 

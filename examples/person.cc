@@ -2,18 +2,19 @@
 #include "macro_utils.h"
 
 REGISTER_TABLE(Person) {
-  identity("id", &Person::id); // ID
-  field("num", &Person::num, 123, false); // NOT_NULL
-  field("name", &Person::name, false);
-  field("desc", &Person::desc, std::string("guest"));
-  field("age", &Person::age, 1.2);
-  field("birthday", &Person::birthday, datetime("1967-06-26 00:00:00"));
-  has_one("address_id", &Person::address);
-  has_one("office_id", &Person::bureau);
-//  has_and_belongs_to_many("friends", &Person::friends); // TODO NYI
-//  has_many("parents", &Person::parents); // TODO NYI
+  register_identity("id", &Person::id); // ID
+  register_field("num", &Person::num, 123, false); // NOT_NULL
+  register_field("name", &Person::name, false);
+  register_field("desc", &Person::desc, std::string("guest"));
+  register_field("age", &Person::age, 1.2);
+  register_field("birthday", &Person::birthday, datetime("1967-06-26 00:00:00"));
+  register_reference("address_id", &Person::address);
+  register_reference("office_id", &Person::bureau);
 }
- 
+
+
+has_one(Person,Address,address);
+has_one(Person,Address,bureau);
 
 int main() {
 //  Lorm::connect("sqlite://:memory:");

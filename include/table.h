@@ -26,7 +26,7 @@
 #endif
 
 #define FIELD_FUN(CPPTYPE, LORMTYPE) \
-static void field(const std::string & col, column<CPPTYPE> T::* f, CPPTYPE def, bool nullable = true) { \
+static void register_field(const std::string & col, column<CPPTYPE> T::* f, CPPTYPE def, bool nullable = true) { \
 lorm::column_t c; \
 c.offset=*(reinterpret_cast<unsigned long *> (&f));\
 c.is_id = false; \
@@ -37,7 +37,7 @@ c.has_default = true; \
 c.default_value = def; \
 columns_[col]=c; \
 } \
-static void field(const std::string & col, column<CPPTYPE> T::* f, bool nullable = true) { \
+static void register_field(const std::string & col, column<CPPTYPE> T::* f, bool nullable = true) { \
 lorm::column_t c; \
 c.offset=*(reinterpret_cast<unsigned long *> (&f));\
 c.is_id = false; \
@@ -49,7 +49,7 @@ columns_[col]=c; \
 } 
 
 #define ID_FUN(TYPE) \
-static void identity(const std::string & col, column<TYPE> T::* f) { \
+static void register_identity(const std::string & col, column<TYPE> T::* f) { \
 identity_col_ = col; \
 lorm::column_t c; \
 c.offset= *(reinterpret_cast<unsigned long *> (&f));\
@@ -60,6 +60,10 @@ c.nullable = false; \
 c.has_default = false; \
 columns_[col]=c; \
 } 
+
+// Below, a "pretty" wrapper, to avoid visible use of the final "_" in data member name.
+// (final _ is mandatory to avoid ambiguity with accessor names)
+#define register_reference(COL,ROLE) _register_reference(COL,ROLE##_)
 
 
 template <class T> class table {
@@ -76,10 +80,9 @@ public:
   FIELD_FUN(datetime,lorm::SQL_DATETIME)
   
   template <class FOREIGN_CLASS> 
-  static void has_one(const std::string & col, reference<FOREIGN_CLASS> T::*f ) {
-    field(col,reinterpret_cast<column<int> T::*>(f));
+  static void _register_reference(const std::string & col, reference<FOREIGN_CLASS> T::*f ) {
+    register_field(col,reinterpret_cast<column<int> T::*>(f));
   }
-  
   static void create() {
     T table;
     Lorm::getInstance()->create_table(T::classname(), table.columns_);
@@ -381,18 +384,36 @@ protected:
   }
 };
 
+// Macros for declaration of private to-many and to-one containers
+
+#define REFERENCE(FOREIGN_CLASS,role)\
+public:\
+  reference < FOREIGN_CLASS > role##_;\
+  FOREIGN_CLASS &role (bool force_reload=false);\
+  FOREIGN_CLASS &role (const FOREIGN_CLASS &that_role);\
+
+
 #define COLLECTION(FOREIGN_CLASS,role)\
 private:\
   std::tr1::shared_ptr< collection < FOREIGN_CLASS > > role##_;\
 public:\
   collection < FOREIGN_CLASS > &role (bool force_reload=false);
 
+#define has_one(THIS_CLASS,FOREIGN_CLASS,role)\
+FOREIGN_CLASS &THIS_CLASS::role (bool force_reload) {\
+  return role##_.get_role(force_reload);\
+}\
+FOREIGN_CLASS &THIS_CLASS::role (const FOREIGN_CLASS &that_role) {\
+  role##_.set_role(that_role);\
+  return role##_.get_role();\
+}\
+
 #define has_many(THIS_CLASS,FOREIGN_CLASS,role,reverse_role)\
 collection < FOREIGN_CLASS > &THIS_CLASS::role (bool force_reload) {\
   if (this->id.is_null()) throw "Cannot access roles of an unsaved object";\
   if (!role##_.get() || force_reload) {\
     FOREIGN_CLASS reverse_criteria;\
-    reverse_criteria.reverse_role=this->id;\
+    reverse_criteria.reverse_role##_=this->id;\
     collection < FOREIGN_CLASS > *pCol=reverse_criteria.find();\
     role##_.reset(pCol);\
   }\
@@ -439,6 +460,6 @@ collection < FOREIGN_CLASS > &THIS_CLASS::role (bool force_reload) {\
 
 #undef FIELD_FUN
 #undef FIELD_DATA
-
+  
 #endif // __LORM_TABLE_H
 

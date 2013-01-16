@@ -11,10 +11,10 @@
 #include "person.h"
 
 REGISTER_TABLE(Address) {
-  identity("id", &Address::id); // ID
-  field("zip", &Address::zip,0,false); // NOT_NULL
-  field("street", &Address::street, false);
-  field("city", &Address::city,false);
+  register_identity("id", &Address::id); // ID
+  register_field("zip", &Address::zip,0,false); // NOT_NULL
+  register_field("street", &Address::street, false);
+  register_field("city", &Address::city,false);
 }
 
 has_many(Address,Person,residents,address)
